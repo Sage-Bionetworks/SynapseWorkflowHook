@@ -1,0 +1,10 @@
+Workflow Administrator:
+
+Submission ##submissionId## failed. ##workflowDescription##
+
+##errorMessage##
+
+
+Sincerely,
+
+Workflow Administration

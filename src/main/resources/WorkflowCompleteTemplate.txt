@@ -1,0 +1,8 @@
+Dear ##team##:
+
+Your workflow job, ##submissionId##, has finished running.  ##submissionFolderId##
+
+
+Sincerely,
+
+Workflow Administration

@@ -1,0 +1,10 @@
+Dear ##team##:
+
+Your workflow job, ##submissionId##, has failed to complete. ##errorMessage## ##submissionFolderId##
+
+Sincerely,
+
+Workflow Administration
+
+
+##logs##
