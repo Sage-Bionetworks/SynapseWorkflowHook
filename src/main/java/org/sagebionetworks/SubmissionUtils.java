@@ -221,24 +221,6 @@ public class SubmissionUtils {
 			throw new InvalidSubmissionException(entityReference+" is not accessible by the submission creators.");
 	}
 
-	public void downloadSubmissionFile(Submission sub, File target) throws IOException, SynapseException {
-		FileHandle fileHandle = getFileHandleFromEntityBundle(sub.getEntityBundleJSON());
-		synapse.downloadFromSubmission(sub.getId(), fileHandle.getId(), target);
-	}
-
-	public byte[] downloadSubmissionFile(Submission sub) throws IOException, SynapseException {
-		File temp = File.createTempFile("temp", null); 
-		InputStream fis = new FileInputStream(temp);
-		try {
-			downloadSubmissionFile(sub, temp);
-			byte[] result = IOUtils.toByteArray(fis);
-			return result;
-		} finally {
-			fis.close();
-			boolean success = temp.delete();
-		}
-	}
-
 	public static Class<Entity> getEntityTypeFromSubmission(Submission sub) throws JSONObjectAdapterException {
 		EntityBundle bundle = EntityFactory.createEntityFromJSONString(
 				sub.getEntityBundleJSON(), EntityBundle.class);
@@ -273,17 +255,6 @@ public class SubmissionUtils {
 		}
 		return new Submitter(submittingUserOrTeamId, submittingUserOrTeamName);
 	}
-
-	public static String getImageReferenceFromDockerSubmission(Submission sub) {
-		String repositoryName = getDockerRepositoryNameFromEntityBundle(sub.getEntityBundleJSON());
-		if (StringUtils.isEmpty(repositoryName)) 
-			throw new IllegalArgumentException("Submitted entity lacks required Docker repository name.");
-		String digest = sub.getDockerDigest();
-		if (StringUtils.isEmpty(digest))
-			throw new IllegalArgumentException("Submitted entity lacks required Docker digest.");
-		return repositoryName + "@" + digest;
-	}
-
 
 	public static List<String> getSubmissionContributors(Submission submission) {
 		List<String> result = new ArrayList<String>();

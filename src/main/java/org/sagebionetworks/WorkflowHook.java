@@ -1,10 +1,12 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.MAX_LOG_ANNOTATION_CHARS;
 import static org.sagebionetworks.Constants.NOTIFICATION_PRINCIPAL_ID;
 import static org.sagebionetworks.Constants.ROOT_TEMPLATE_ANNOTATION_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
+import static org.sagebionetworks.Constants.WORKFLOW_SYNPASE_CONFIG;
 import static org.sagebionetworks.DockerUtils.PROCESS_TERMINATED_ERROR_CODE;
 import static org.sagebionetworks.EvaluationUtils.ADMIN_ANNOTS_ARE_PRIVATE;
 import static org.sagebionetworks.EvaluationUtils.FAILURE_REASON;
@@ -40,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -126,6 +129,20 @@ public class WorkflowHook  {
 		dockerUtils.getInfo();
 		log.info("Precheck completed successfully.");
 
+	}
+	
+	private static File synapseConfigFile = null;
+	
+	private static File getSynaspeConfigFile() throws IOException {
+		if (synapseConfigFile==null) {
+			synapseConfigFile = createTempFile(null, getAgentTempDir());
+			String username=getProperty(SYNAPSE_USERNAME_PROPERTY);
+			String password=getProperty(SYNAPSE_PASSWORD_PROPERTY);;
+			try (FileOutputStream fos = new FileOutputStream(synapseConfigFile)) {
+				IOUtils.write("[authentication]\nusername="+username+"\npassword="+password+"\n", fos, Charset.forName("UTF-8"));
+			}
+		}
+		return synapseConfigFile;
 	}
 
 	public static List<String> getEvaluationIds() throws JSONException {
@@ -245,8 +262,13 @@ public class WorkflowHook  {
 				String workflowId = null;
 				try {
 					File workflowParameters = createTempFile(null, getAgentTempDir());
-					submissionUtils.downloadSubmissionFile(sb.getSubmission(), workflowParameters);
-					WorkflowJob newJob = wes.createWorkflowJob(templateFolderAndRootTemplate, workflowParameters);
+					try (FileOutputStream fos = new FileOutputStream(workflowParameters)) {
+						IOUtils.write("submissionId: "+submissionId+"\n", fos, Charset.forName("UTF-8"));
+					}
+					Map<File,String> additionalROVolumes = new HashMap<File,String>();
+					File hostSynapseConfig = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), getSynaspeConfigFile().getPath());
+					additionalROVolumes.put(hostSynapseConfig, WORKFLOW_SYNPASE_CONFIG);
+					WorkflowJob newJob = wes.createWorkflowJob(templateFolderAndRootTemplate, workflowParameters, additionalROVolumes);
 					workflowId = newJob.getWorkflowId();
 					EvaluationUtils.setAnnotation(submissionStatus, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
 				} catch (InvalidSubmissionException e) {

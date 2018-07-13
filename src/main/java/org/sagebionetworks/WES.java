@@ -42,15 +42,15 @@ public class WES {
 	 * @param workflowParameters the file path to the workflow parameters, relative to the temp folder
 	 * @return the created workflow job
 	 */
-	public WorkflowJob createWorkflowJob(FolderAndFile templateFolderAndRootTemplate, File workflowParameters) throws IOException, InvalidSubmissionException {
+	public WorkflowJob createWorkflowJob(FolderAndFile templateFolderAndRootTemplate, File workflowParameters, Map<File,String> additionalROVolumeMounts) throws IOException, InvalidSubmissionException {
 		File templateFolder = templateFolderAndRootTemplate.getFolder(); // relative to 'temp' folder which is mounted to the container
 		File rootTemplate = templateFolderAndRootTemplate.getFile(); // relative to templateFolder
 		// the two paths, from the point of view of the host running this process
 		File hostTemplateFolder = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), templateFolder.getPath());
 		File hostWorkflowParameters = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), workflowParameters.getPath());
 		// the two paths, from the point of view of the workflow engine
-		File workflowTemplateFolder = (new File(WORKFLOW_TEMP_DIR, templateFolder.getPath()));
-		File workflowWorkflowParameters = (new File(WORKFLOW_TEMP_DIR, workflowParameters.getPath()));
+		File workflowTemplateFolder = new File(WORKFLOW_TEMP_DIR, templateFolder.getPath());
+		File workflowWorkflowParameters = new File(WORKFLOW_TEMP_DIR, workflowParameters.getPath());
 
 		List<String> cmd = Arrays.asList(
 				"toil-cwl-runner", 
@@ -64,18 +64,17 @@ public class WES {
 
 		Map<File,String> rwVolumes = new HashMap<File,String>();
 		
-		// TODO do I need to connect to mesos head node?
-
 		String containerName = Utils.createContainerName();
 		String containerId = null;
-		Map<File,String> roVolumes = new HashMap<File,String>();
+		Map<File,String> roVolumes = new HashMap<File,String>(additionalROVolumeMounts);
 		roVolumes.put(hostTemplateFolder, workflowTemplateFolder.getAbsolutePath());
 		roVolumes.put(hostWorkflowParameters, workflowWorkflowParameters.getAbsolutePath());
 		String workingDir = workflowTemplateFolder.getAbsolutePath();
 		try {
-			// TODO pull from quqy.io ("quay.io/ucsc_cgl/toil"), not Synapse.  The following is a workaround
+			// normally would pull from quqy.io ("quay.io/ucsc_cgl/toil")
+			// this incorporates the Synapse client as well at Toil and Docker
 			containerId = dockerUtils.createModelContainer(
-					"docker.synapse.org/syn6130970/toil",
+					"docker.synapse.org/syn5644795/docker-and-toil",
 					containerName, 
 					roVolumes, 
 					rwVolumes, 

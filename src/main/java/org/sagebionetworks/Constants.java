@@ -26,6 +26,8 @@ public class Constants {
 	// launch the container which runs the workflow
 	public static final String WORKFLOW_TEMP_DIR = "/tempDir";
 	
+	public static final String WORKFLOW_SYNPASE_CONFIG = "/root/.synapseConfig";
+
 	public static final String ROOT_TEMPLATE_ANNOTATION_NAME="ROOT_TEMPLATE";
 
 	/*
