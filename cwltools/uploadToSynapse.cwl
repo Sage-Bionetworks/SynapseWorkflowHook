@@ -21,26 +21,34 @@ requirements:
           #!/usr/bin/env python
           import synapseclient
           import argparse
+          import json
           if __name__ == '__main__':
             parser = argparse.ArgumentParser()
             parser.add_argument("-f", "--infile", required=True, help="file to upload")
             parser.add_argument("-p", "--parentId", required=True, help="Synapse parent for file")
-            parser.add_argument("-i", "--synid", required=True, help="Path to syn id")
+            parser.add_argument("-r", "--results", required=True, help="Results of file upload")
             args = parser.parse_args()
             syn = synapseclient.Synapse(configPath="/root/.synapseConfig")
             syn.login()
-            file=File(path=args.infile, parent=args.parentId)
-            file = syn.upload(file)
-            with open(args.downloadFilePath, 'w') as o:
-              o.write(file.id)
+            file=synapseclient.File(path=args.infile, parent=args.parentId)
+            file = syn.store(file)
+            results = {'uploadedFileId':file.id,'uploadedFileVersion':file.versionNumber}
+            with open(args.results, 'w') as o:
+              o.write(json.dumps(results))
      
 outputs:
   - id: uploadedFileId
     type: string
     outputBinding:
-      glob: synid.txt
+      glob: results.json
       loadContents: true
-      outputEval: $(self[0].contents)
+      outputEval: $(JSON.parse(self[0].contents)['uploadedFileId'])
+  - id: uploadedFileVersion
+    type: int
+    outputBinding:
+      glob: results.json
+      loadContents: true
+      outputEval: $(JSON.parse(self[0].contents)['uploadedFileVersion'])
 
 arguments:
   - valueFrom: uploadFile.py
@@ -48,7 +56,7 @@ arguments:
     prefix: -f
   - valueFrom: $(inputs.parentId)
     prefix: -p
-  - valueFrom: synid.txt
-    prefix: -i
+  - valueFrom: results.json
+    prefix: -r
 
 
