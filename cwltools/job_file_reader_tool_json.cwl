@@ -1,35 +1,22 @@
 #!/usr/bin/env cwl-runner
+#
+# parses a json file and returns strongly typed results
+#
 cwlVersion: v1.0
-class: CommandLineTool
-# need a no-op command 
-baseCommand: ls
-      
+class: ExpressionTool
+
 requirements:
   - class: InlineJavascriptRequirement
-    expressionLib: 
-    - |
-        function parseParam(name, inp) {
-          var j = JSON.parse(inp);
-          if (name in j) {
-            return j[name];
-          } else {
-            return null;
-          }
-        }
-  - class: InitialWorkDirRequirement
-    listing:
-      - $(inputs.inputfile)
+
 inputs:
   - id: inputfile
     type: File
-
+    inputBinding:
+      loadContents: true
+      
 outputs:
   - id: foo
     type: string?
-    outputBinding:
-      glob: $(inputs.inputfile.basename)
-      loadContents: true
-      outputEval: $(parseParam("foo",self[0].contents))
   - id: bar
     type:
       type: record
@@ -38,14 +25,17 @@ outputs:
           type: string
         - name: b
           type: int
-    outputBinding:
-      glob: $(inputs.inputfile.basename)
-      loadContents: true
-      outputEval: $(parseParam("bar",self[0].contents))
   - id: baz
     type: string?
-    outputBinding:
-      glob: $(inputs.inputfile.basename)
-      loadContents: true
-      outputEval: $(parseParam("baz",self[0].contents))
 
+expression: |
+  ${
+    var j = JSON.parse(inputs.inputfile.contents);
+    var outputs=['foo','bar','baz'];
+    var result={};
+    for (var i=0; i<outputs.length; i++) {
+      var output = outputs[i];
+      if (output in j) result[output]=j[output];
+    }
+    return result;
+  }

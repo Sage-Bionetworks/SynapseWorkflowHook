@@ -1,43 +1,40 @@
 #!/usr/bin/env cwl-runner
+#
+# parses a yaml file and returns strongly typed results
+# note: only handles primitive values, not arrays or records
+#
 cwlVersion: v1.0
-class: CommandLineTool
-# need a no-op command 
-baseCommand: ls
-      
+class: ExpressionTool
+
 requirements:
   - class: InlineJavascriptRequirement
-    expressionLib: 
-    - |
-        function parseParam(name, inp) {
-          var patt = new RegExp(name+":[\\s]*(.*)");
-          var result = inp.match(patt);
-          if (result==null) return null;
-          return result[1];
-        }
-  - class: InitialWorkDirRequirement
-    listing:
-      - $(inputs.inputfile)
+
 inputs:
   - id: inputfile
     type: File
-
+    inputBinding:
+      loadContents: true
+      
 outputs:
   - id: foo
     type: string?
-    outputBinding:
-      glob: $(inputs.inputfile.basename)
-      loadContents: true
-      outputEval: $(parseParam("foo",self[0].contents))
   - id: bar
     type: string?
-    outputBinding:
-      glob: $(inputs.inputfile.basename)
-      loadContents: true
-      outputEval: $(parseParam("bar",self[0].contents))
   - id: baz
     type: string?
-    outputBinding:
-      glob: $(inputs.inputfile.basename)
-      loadContents: true
-      outputEval: $(parseParam("baz",self[0].contents))
 
+expression: |
+  ${
+    // we'd like to import a yaml parser but this doesn't work:
+    //import '/node_modules/js-yaml/bin/js-yaml.js';
+    var inp = inputs.inputfile.contents;
+    var outputs=['foo','bar','baz'];
+    var result={};
+    for (var i=0; i<outputs.length; i++) {
+      var output = outputs[i];
+      var patt = new RegExp(output+":[\\s]*(.*)");
+      var value = inp.match(patt);
+      if (value!=null) result[output]=value[1];
+    }
+    return result;
+  }
