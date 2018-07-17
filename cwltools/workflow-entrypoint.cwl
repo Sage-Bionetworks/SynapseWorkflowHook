@@ -23,20 +23,20 @@ steps:
       - id: entity
       
   readWorkflowParameters:
-    run:  job_file_reader_tool_yaml.cwl
+    run:  job_file_reader_tool_yaml_sample.cwl
     in:
       - id: inputfile
         source: "#downloadSubmission/filePath"
     out:
-      - id: content
-  
+      - id: message
+
   coreWorkflow:
     run: sample-workflow.cwl
     in:
       - id: message
-        source: "#readWorkflowParameters/content/message"
+        source: "#readWorkflowParameters/message"
     out:
-      - id stdout
+      - id: stdout
   
   uploadResults:
     run: uploadToSynapse.cwl
@@ -49,9 +49,20 @@ steps:
         source: "#downloadSubmission/entity"
       - id: executedUrl
         valueFrom: "https://github.com/Sage-Bionetworks/SynapseWorkflowHook.git"
-  
-  annotateSubmissionWithoutOutput:
-    run: 
-    in:
     out:
+      - id: uploadedFileId
+      - id: uploadedFileVersion
+      
+  annotateSubmissionWithOutput:
+    run: annotateSubmission.cwl
+    in:
+      - id: submissionId
+        source: "#submissionId"
+      - id: annotationName
+        valueFrom:  "workflowOutputFile"
+      - id: annotationValue
+        source: "#uploadResults/uploadedFileId"
+      - id: private
+        valueFrom: "false"
+    out: []
  

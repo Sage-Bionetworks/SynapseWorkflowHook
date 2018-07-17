@@ -15,7 +15,7 @@ inputs:
   - id: annotationValue
     type: string
   - id: private
-    type: boolean?
+    type: string?
 
 arguments:
   - valueFrom: annotationSubmission.py
