@@ -12,6 +12,15 @@ inputs:
   - id: downloadLocation
     type: Directory
 
+arguments:
+  - valueFrom: downloadSubmissionFile.py
+  - valueFrom: $(inputs.submissionId)
+    prefix: -s
+  - valueFrom: $(inputs.downloadLocation.basename)
+    prefix: -f
+  - valueFrom: results.json
+    prefix: -r
+
 requirements:
   - class: InlineJavascriptRequirement
   - class: InitialWorkDirRequirement
@@ -43,26 +52,20 @@ outputs:
       glob: results.json
       loadContents: true
       outputEval: $(JSON.parse(self[0].contents)['filePath'])
-  - id: entityId
-    type: string
-    outputBinding:
-      glob: results.json
-      loadContents: true
-      outputEval: $(JSON.parse(self[0].contents)['entityId'])
-  - id: entityVersion
-    type: int
-    outputBinding:
-      glob: results.json
-      loadContents: true
-      outputEval: $(JSON.parse(self[0].contents)['entityVersion'])
-
-arguments:
-  - valueFrom: downloadSubmissionFile.py
-  - valueFrom: $(inputs.submissionId)
-    prefix: -s
-  - valueFrom: $(inputs.downloadLocation.basename)
-    prefix: -f
-  - valueFrom: results.json
-    prefix: -r
-
+  - id: entity
+    type:
+      type: record
+      fields:
+      - name: id
+        type: string
+        outputBinding:
+          glob: results.json
+          loadContents: true
+          outputEval: $(JSON.parse(self[0].contents)['entityId'])
+      - name: version
+        type: int
+        outputBinding:
+          glob: results.json
+          loadContents: true
+          outputEval: $(JSON.parse(self[0].contents)['entityVersion'])
 

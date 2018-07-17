@@ -10,4 +10,12 @@ inputs:
     type: string
     inputBinding:
       position: 1
-outputs: []
+      
+      
+stdout: stdout.txt
+
+outputs:
+  - id: stdout
+    type: File
+    outputBinding:
+      glob: stdout.txt
