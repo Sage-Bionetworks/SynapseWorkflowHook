@@ -24,13 +24,14 @@ Links one or more Synapse Evaluation queues to a workflow engine.  Each Evaluati
 - `DOCKER_CERT_PATH_HOST` - credentials file allowing access to Docker engine
 - `SYNAPSE_USERNAME` - Synapse credentials under which the Workflow Hook will run.  Must have access to evaluation queue(s) being serviced
 - `SYNAPSE_PASSWORD` - password for `SYNAPSE_USERNAME`
-- `HOST_TEMP` - scratch folder on the host, mounted as /tempDir to the container running the WorkflowHook
+- `WORKFLOW_TEMPDIR` - scratch folder on the host, mounted as /tempDir to the container running the WorkflowHook
 - `WORKFLOW_OUTPUT_ROOT_ENTITY_ID` - root (Project or Folder) for uploaded doc's, like log files.  Hierarchy is root/submitterId/submissionId/files
 - `EVALUATION_TEMPLATES` - json mapping evaluation IDs to URL for workflow template archive
 - `NOTIFICATION_PRINCIPAL_ID` - (optional) Synapse ID of user or team to be notified of system issues.  If omitted then notification are sent to the Synapse account under which the workflow pipeline is run
 - `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.  If false then a separate process must 'unlock' files.  This is useful when workflows run on sensitive data and administration needs to control the volume of results returned to the workflow submitter
 - `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` - (optional) Synapse ID of user authorized to share (unlock) workflow output files 
 	(only required if `SHARE_RESULTS_IMMEDIATELY` is false)
+- `EXECUTION_STAGE` - (optional) one of `VALIDATION`, `EXECUTION`, `ALL`.  Defaults to `ALL`
 
 
 ### To use:
@@ -40,14 +41,14 @@ To run:
 
 ```
 docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx \
--v /path/to/workflow/template:/template workflow-hook /set_up.sh
+-e WORKFLOW_TEMPLATE_URL=http://xxxxxx -e ROOT_TEMPLATE=xxxxx workflow-hook /set_up.sh
 ```
 
 or
 
 ```
 docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx \
--e WORKFLOW_TEMPLATE_URL=http://xxxxxx -e ROOT_TEMPLATE=xxxxx workflow-hook /set_up.sh
+-v /path/to/workflow/template:/template workflow-hook /set_up.sh
 ```
 where `WORKFLOW_TEMPLATE_URL` is a link to a zip file and `ROOT_TEMPLATE` is a path within the zip where a workflow file can be found.
 

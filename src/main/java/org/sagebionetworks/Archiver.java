@@ -213,15 +213,22 @@ public class Archiver {
 	public Folder getOrCreateSubmitterFolder(String submittingUserOrTeamId, boolean shareImmediately) throws SynapseException {
 		String parentId = getSynIdProperty("WORKFLOW_OUTPUT_ROOT_ENTITY_ID");
 
-		Folder submitterFolder = getOrCreateFolder(submittingUserOrTeamId, parentId);
-
 		Map<String,Set<ACCESS_TYPE>> principalsAndPermissions = new HashMap<String,Set<ACCESS_TYPE>>();
+		String folderName;
 		if (shareImmediately) {
+			folderName=submittingUserOrTeamId;
 			principalsAndPermissions.put(submittingUserOrTeamId, READ_DOWNLOAD);
 		} else {
+			folderName=submittingUserOrTeamId+"_LOCKED";
 			principalsAndPermissions.put(submittingUserOrTeamId, Collections.singleton(ACCESS_TYPE.READ));
-			principalsAndPermissions.put(getProperty("DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID"), READ_WRITE);
+			String dataUnlockSynapsePrincipalId=getProperty("DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID", false);
+			if (dataUnlockSynapsePrincipalId!=null) {
+				principalsAndPermissions.put(dataUnlockSynapsePrincipalId, READ_WRITE);
+			}
 		}
+
+		
+		Folder submitterFolder = getOrCreateFolder(folderName, parentId);
 		shareEntity(submitterFolder.getId(), principalsAndPermissions);
 
 		return submitterFolder;

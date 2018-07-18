@@ -22,6 +22,8 @@ import org.sagebionetworks.repo.model.annotation.DoubleAnnotation;
 import org.sagebionetworks.repo.model.annotation.LongAnnotation;
 import org.sagebionetworks.repo.model.annotation.StringAnnotation;
 import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
+import static org.sagebionetworks.Constants.*;
+import static org.sagebionetworks.Utils.*;
 
 public class EvaluationUtils {
 	private static final int PAGE_SIZE = 10;
@@ -55,6 +57,51 @@ public class EvaluationUtils {
 
 	public EvaluationUtils(SynapseClient synapse) {
 		this.synapse=synapse;
+	}
+	
+	enum EXECUTION_STAGE {
+		VALIDATION,
+		EXECUTION,
+		ALL
+	};
+	
+	public static SubmissionStatusEnum getInitialSubmissionState() {
+		String executionStageString = getProperty(EXECUTION_STAGE_PROPERTY_NAME, false);
+		EXECUTION_STAGE stage = executionStageString==null ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
+		switch (stage) {
+		case VALIDATION:
+			return SubmissionStatusEnum.RECEIVED;
+		case EXECUTION:
+			return SubmissionStatusEnum.VALIDATED;
+		default: // ALL
+			return SubmissionStatusEnum.RECEIVED;
+		}
+	}
+
+	public static SubmissionStatusEnum getInProgressSubmissionState() {
+		String executionStageString = getProperty(EXECUTION_STAGE_PROPERTY_NAME, false);
+		EXECUTION_STAGE stage = executionStageString==null ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
+		switch (stage) {
+		case VALIDATION:
+			return SubmissionStatusEnum.OPEN;
+		case EXECUTION:
+			return SubmissionStatusEnum.EVALUATION_IN_PROGRESS;
+		default: // ALL
+			return SubmissionStatusEnum.EVALUATION_IN_PROGRESS;
+		}
+	}
+
+	public static SubmissionStatusEnum getFinalSubmissionState() {
+		String executionStageString = getProperty(EXECUTION_STAGE_PROPERTY_NAME, false);
+		EXECUTION_STAGE stage = executionStageString==null ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
+		switch (stage) {
+		case VALIDATION:
+			return SubmissionStatusEnum.VALIDATED;
+		case EXECUTION:
+			return SubmissionStatusEnum.ACCEPTED;
+		default: // ALL
+			return SubmissionStatusEnum.ACCEPTED;
+		}
 	}
 
 	public static String getStringAnnotation(SubmissionStatus status, String key) {

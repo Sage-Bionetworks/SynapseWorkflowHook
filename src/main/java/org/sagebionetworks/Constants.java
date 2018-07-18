@@ -43,4 +43,6 @@ public class Constants {
 
 	public static final String[] DUMP_PROGRESS_SHELL_COMMAND = {"cat","/progress.txt"};
 	public static final int NUMBER_OF_PROGRESS_CHARACTERS = 5;
+	
+	public static final String EXECUTION_STAGE_PROPERTY_NAME = "EXECUTION_STAGE";
 }

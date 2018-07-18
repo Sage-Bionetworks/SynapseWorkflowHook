@@ -19,6 +19,9 @@ import static org.sagebionetworks.EvaluationUtils.PROGRESS;
 import static org.sagebionetworks.EvaluationUtils.PUBLIC_ANNOTATION_SETTING;
 import static org.sagebionetworks.EvaluationUtils.STATUS_DESCRIPTION;
 import static org.sagebionetworks.EvaluationUtils.SUBMISSION_ARTIFACTS_FOLDER;
+import static org.sagebionetworks.EvaluationUtils.getFinalSubmissionState;
+import static org.sagebionetworks.EvaluationUtils.getInProgressSubmissionState;
+import static org.sagebionetworks.EvaluationUtils.getInitialSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.setStatus;
 import static org.sagebionetworks.MessageUtils.LOGS_AVAILABLE_SUBJECT;
 import static org.sagebionetworks.MessageUtils.SUBMISSION_PIPELINE_FAILURE_SUBJECT;
@@ -244,7 +247,7 @@ public class WorkflowHook  {
 
 	public void createNewWorkflowJobs(String evaluationId, FolderAndFile templateFolderAndRootTemplate) throws Throwable {
 		List<SubmissionBundle> receivedSubmissions = 
-				evaluationUtils.selectSubmissions(evaluationId, SubmissionStatusEnum.RECEIVED);
+				evaluationUtils.selectSubmissions(evaluationId, getInitialSubmissionState() );
 		for (SubmissionBundle sb : receivedSubmissions) {
 			String submissionId=sb.getSubmission().getId();
 			SubmissionStatus submissionStatus = sb.getSubmissionStatus();
@@ -264,6 +267,11 @@ public class WorkflowHook  {
 					File workflowParameters = createTempFile(null, getAgentTempDir());
 					try (FileOutputStream fos = new FileOutputStream(workflowParameters)) {
 						IOUtils.write("submissionId: "+submissionId+"\n", fos, Charset.forName("UTF-8"));
+						String submittingUserOrTeamId = SubmissionUtils.getSubmittingUserOrTeamId(sb.getSubmission());
+						Folder sharedFolder=archiver.getOrCreateSubmitterFolder(submittingUserOrTeamId, true);
+						IOUtils.write("submitterUploadSynId: "+sharedFolder.getId()+"\n", fos, Charset.forName("UTF-8"));
+						Folder lockedFolder=archiver.getOrCreateSubmitterFolder(submittingUserOrTeamId, false);
+						IOUtils.write("adminUploadSynId: "+lockedFolder.getId()+"\n", fos, Charset.forName("UTF-8"));
 					}
 					Map<File,String> additionalROVolumes = new HashMap<File,String>();
 					File hostSynapseConfig = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), getSynaspeConfigFile().getPath());
@@ -307,7 +315,7 @@ public class WorkflowHook  {
 		long now = System.currentTimeMillis();
 		EvaluationUtils.setAnnotation(ss, JOB_STARTED_TIME_STAMP, now, ADMIN_ANNOTS_ARE_PRIVATE);
 		EvaluationUtils.setAnnotation(ss, JOB_LAST_UPDATED_TIME_STAMP, now, PUBLIC_ANNOTATION_SETTING);
-		chosenBundle.getSubmissionStatus().setStatus(SubmissionStatusEnum.EVALUATION_IN_PROGRESS);    	
+		chosenBundle.getSubmissionStatus().setStatus(getInProgressSubmissionState());    	
 	}
 	
 	// returns map from workflow ID to Submission Bundle
@@ -331,7 +339,7 @@ public class WorkflowHook  {
 		List<WorkflowJob> jobs=null;
 		// list the running jobs according to Synapse
 		List<SubmissionBundle> runningSubmissions = evaluationUtils.
-				selectSubmissions(evaluationId, SubmissionStatusEnum.EVALUATION_IN_PROGRESS);
+				selectSubmissions(evaluationId, getInProgressSubmissionState());
 		// list the running jobs according to the workflow system
 		jobs = wes.listWorkflowJobs();
 		// the two lists should be the same ...
@@ -381,10 +389,10 @@ public class WorkflowHook  {
 				}
 				switch(containerCompletionStatus) {
 				case IN_PROGRESS:
-					submissionStatus.setStatus(SubmissionStatusEnum.EVALUATION_IN_PROGRESS);
+					submissionStatus.setStatus(getInProgressSubmissionState());
 					break;
 				case DONE:
-					submissionStatus.setStatus(SubmissionStatusEnum.ACCEPTED);
+					submissionStatus.setStatus(getFinalSubmissionState());
 					EvaluationUtils.removeAnnotation(submissionStatus, FAILURE_REASON);
 					{
 						Submitter submitter = submissionUtils.getSubmitter(submission);
