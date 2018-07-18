@@ -55,18 +55,21 @@ public class WorkflowAdmin {
 		switch(task) {
 		case SET_UP:
 			// Set Up
+			if (args.length!=2) {
+				throw new IllegalArgumentException("Expected two param's but found: "+Arrays.asList(args));
+			}
 			String workflowUrl = getProperty("WORKFLOW_TEMPLATE_URL", false);
 			String rootTemplate = getProperty("ROOT_TEMPLATE", false);
-			if (StringUtils.isNotEmpty(workflowUrl) && StringUtils.isNotEmpty(rootTemplate) && args.length==1) {
+			if (StringUtils.isNotEmpty(workflowUrl) && StringUtils.isNotEmpty(rootTemplate)) {
 				String projectId = workflowAdmin.createProject();
 				String fileEntityId = workflowAdmin.createExternalFileEntity(workflowUrl, projectId, rootTemplate);
 				workflowAdmin.setUp(fileEntityId, projectId);
-			} else if (StringUtils.isEmpty(workflowUrl) && args.length==2) {
+			} else if (StringUtils.isEmpty(workflowUrl)) {
 				String projectId = workflowAdmin.createProject();
 				String fileEntityId = workflowAdmin.createFileEntityForFile(args[1], projectId);
 				workflowAdmin.setUp(fileEntityId, projectId);
 			} else {
-				throw new IllegalArgumentException("invalid parameters.  args: "+Arrays.asList(args));
+				throw new IllegalArgumentException("invalid combination of env var's");
 			}
 			break;
 		case SUBMIT:

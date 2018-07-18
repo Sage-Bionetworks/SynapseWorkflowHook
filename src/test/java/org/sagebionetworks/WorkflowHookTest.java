@@ -1,12 +1,16 @@
 package org.sagebionetworks;
 
-import static org.mockito.Mockito.*;
-import static org.mockito.Matchers.*;
-import static org.sagebionetworks.Constants.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,6 +73,15 @@ public class WorkflowHookTest {
 				synapse, evaluationUtils,
 				dockerUtils, submissionUtils, sleepTimeMillis);
 
+	}
+	
+	@After
+	public void tearDown() throws Exception {
+		System.clearProperty(AGENT_TEMP_DIR_PROPERTY_NAME);
+		System.clearProperty(HOST_TEMP_DIR_PROPERTY_NAME);
+		System.clearProperty("WORKFLOW_OUTPUT_ROOT_ENTITY_ID");
+		System.clearProperty("SYNAPSE_USERNAME");
+		System.clearProperty("SYNAPSE_PASSWORD");
 	}
 	
 	// TODO these tests need to be completed
