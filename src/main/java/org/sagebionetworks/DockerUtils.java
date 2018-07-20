@@ -163,7 +163,7 @@ public class DockerUtils {
 			String workingDir) throws IOException {
 		List<Bind> binds = new ArrayList<Bind>();
 		String rwVolumeList = getProperty("RW_VOLUMES", false);
-		if (rwVolumeList != null) {
+		if (!StringUtils.isEmpty(rwVolumeList)) {
 			String[] volumeStrings = rwVolumeList.split(",");
 			for (String volumeString : volumeStrings) {
 				String[] extAndInt = volumeString.split(":");

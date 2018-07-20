@@ -8,6 +8,7 @@ import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 
 import org.junit.After;
@@ -55,7 +56,7 @@ public class WorkflowHookTest {
 		try {
 			MOCK_TEMPLATE_FOLDER = File.createTempFile("foo", "bar", new File(System.getProperty("java.io.tmpdir")));
 			MOCK_TEMPLATE_FILE = File.createTempFile("foo", "bar");
-			MOCK_TEMPLATE_FOLDER_AND_FILE = new FolderAndFile(MOCK_TEMPLATE_FOLDER, MOCK_TEMPLATE_FILE);
+			MOCK_TEMPLATE_FOLDER_AND_FILE = new FolderAndFile(new ContainerRelativeFile(MOCK_TEMPLATE_FOLDER.getName()), MOCK_TEMPLATE_FILE);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -111,6 +112,15 @@ public class WorkflowHookTest {
 	@Test 
 	public void testUpdateWorkflowJobs() throws Throwable {
 		workflowHook.updateWorkflowJobs(EVALUATION_ID);
+	}
+	
+	@Test
+	public void testDownloadZip() throws Throwable {
+		String urlString = "https://github.com/Sage-Bionetworks/SynapseWorkflowExample/archive/master.zip";
+		URL url = new URL(urlString);
+		File tempDir = new File(System.getProperty("java.io.tmpdir"));
+		File target = tempDir;
+		WorkflowHook.downloadZip(url, tempDir, target);
 	}
 
 }

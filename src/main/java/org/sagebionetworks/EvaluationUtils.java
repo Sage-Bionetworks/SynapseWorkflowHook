@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.StringUtils;
 import org.sagebionetworks.client.SynapseClient;
 import org.sagebionetworks.client.exceptions.SynapseConflictingUpdateException;
 import org.sagebionetworks.client.exceptions.SynapseException;
@@ -59,7 +60,7 @@ public class EvaluationUtils {
 		this.synapse=synapse;
 	}
 	
-	enum EXECUTION_STAGE {
+	public enum EXECUTION_STAGE {
 		VALIDATION,
 		EXECUTION,
 		ALL
@@ -67,7 +68,7 @@ public class EvaluationUtils {
 	
 	public static SubmissionStatusEnum getInitialSubmissionState() {
 		String executionStageString = getProperty(EXECUTION_STAGE_PROPERTY_NAME, false);
-		EXECUTION_STAGE stage = executionStageString==null ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
+		EXECUTION_STAGE stage = StringUtils.isEmpty(executionStageString) ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
 		switch (stage) {
 		case VALIDATION:
 			return SubmissionStatusEnum.RECEIVED;
@@ -80,7 +81,7 @@ public class EvaluationUtils {
 
 	public static SubmissionStatusEnum getInProgressSubmissionState() {
 		String executionStageString = getProperty(EXECUTION_STAGE_PROPERTY_NAME, false);
-		EXECUTION_STAGE stage = executionStageString==null ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
+		EXECUTION_STAGE stage = StringUtils.isEmpty(executionStageString) ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
 		switch (stage) {
 		case VALIDATION:
 			return SubmissionStatusEnum.OPEN;
@@ -93,7 +94,7 @@ public class EvaluationUtils {
 
 	public static SubmissionStatusEnum getFinalSubmissionState() {
 		String executionStageString = getProperty(EXECUTION_STAGE_PROPERTY_NAME, false);
-		EXECUTION_STAGE stage = executionStageString==null ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
+		EXECUTION_STAGE stage = StringUtils.isEmpty(executionStageString) ? EXECUTION_STAGE.ALL : EXECUTION_STAGE.valueOf(executionStageString);
 		switch (stage) {
 		case VALIDATION:
 			return SubmissionStatusEnum.VALIDATED;

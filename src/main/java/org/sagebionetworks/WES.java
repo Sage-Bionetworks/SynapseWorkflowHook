@@ -42,15 +42,15 @@ public class WES {
 	 * @param workflowParameters the file path to the workflow parameters, relative to the temp folder
 	 * @return the created workflow job
 	 */
-	public WorkflowJob createWorkflowJob(FolderAndFile templateFolderAndRootTemplate, File workflowParameters, Map<File,String> additionalROVolumeMounts) throws IOException, InvalidSubmissionException {
-		File templateFolder = templateFolderAndRootTemplate.getFolder(); // relative to 'temp' folder which is mounted to the container
+	public WorkflowJob createWorkflowJob(FolderAndFile templateFolderAndRootTemplate, ContainerRelativeFile workflowParameters, Map<File,String> additionalROVolumeMounts) throws IOException, InvalidSubmissionException {
+		ContainerRelativeFile templateFolder = templateFolderAndRootTemplate.getFolder(); // relative to 'temp' folder which is mounted to the container
 		File rootTemplate = templateFolderAndRootTemplate.getFile(); // relative to templateFolder
 		// the two paths, from the point of view of the host running this process
-		File hostTemplateFolder = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), templateFolder.getPath());
-		File hostWorkflowParameters = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), workflowParameters.getPath());
+		File hostTemplateFolder = templateFolder.getFullPath(new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
+		File hostWorkflowParameters = workflowParameters.getFullPath(new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
 		// the two paths, from the point of view of the workflow engine
-		File workflowTemplateFolder = new File(WORKFLOW_TEMP_DIR, templateFolder.getPath());
-		File workflowWorkflowParameters = new File(WORKFLOW_TEMP_DIR, workflowParameters.getPath());
+		File workflowTemplateFolder = templateFolder.getFullPath(new File(WORKFLOW_TEMP_DIR));
+		File workflowWorkflowParameters = workflowParameters.getFullPath(new File(WORKFLOW_TEMP_DIR));
 
 		List<String> cmd = Arrays.asList(
 				"toil-cwl-runner", 
@@ -60,14 +60,13 @@ public class WES {
 				rootTemplate.getPath(),
 				workflowWorkflowParameters.getAbsolutePath()
 				);
-				
 
 		Map<File,String> rwVolumes = new HashMap<File,String>();
 		
 		String containerName = Utils.createContainerName();
 		String containerId = null;
 		Map<File,String> roVolumes = new HashMap<File,String>(additionalROVolumeMounts);
-		roVolumes.put(hostTemplateFolder, workflowTemplateFolder.getAbsolutePath());
+		rwVolumes.put(hostTemplateFolder, workflowTemplateFolder.getAbsolutePath());
 		roVolumes.put(hostWorkflowParameters, workflowWorkflowParameters.getAbsolutePath());
 		String workingDir = workflowTemplateFolder.getAbsolutePath();
 		try {

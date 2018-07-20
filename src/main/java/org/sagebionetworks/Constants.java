@@ -1,6 +1,5 @@
 package org.sagebionetworks;
 
-
 public class Constants {
 	
 	public static final String SYNAPSE_USERNAME_PROPERTY = "SYNAPSE_USERNAME";
@@ -12,6 +11,9 @@ public class Constants {
 
 	// property names appear as "-e" options in the "docker run" command that launches this agent
 	// these folders are the paths on the host
+	
+	// This is the name of a directory mounted from the host so that files created by the agent can
+	// be shared externally (in particular with the workflow)
 	public static final String HOST_TEMP_DIR_PROPERTY_NAME = "HOST_TEMP";
 
 	// these are the paths as they appear in the agent container, 

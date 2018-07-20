@@ -1,7 +1,7 @@
 package org.sagebionetworks;
-import static org.sagebionetworks.Utils.getAgentTempDir;
+import static org.sagebionetworks.Utils.getHostMountedScratchDir;
 import static org.sagebionetworks.Utils.getProperty;
-import static org.sagebionetworks.Utils.getSynIdProperty;
+import static org.sagebionetworks.Utils.*;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -118,7 +118,7 @@ public class Archiver {
 		String zipFileName = zipFilePrefix.replaceAll("[^a-zA-Z0-9-]", "_")+".zip";
 		// instead of zipping to directoryOrFileToArchive.getParentFile() which may or may not
 		// be on the same volume of directoryOrFileToArchive, we just zip to a known temp dir
-		File zipFile=new File(getAgentTempDir(), zipFileName);
+		File zipFile=new File(getTempDir(), zipFileName);
 		if (directoryOrFileToArchive.isDirectory()) {
 			Utils4J.zipDir(directoryOrFileToArchive, null, zipFile);
 		} else if (directoryOrFileToArchive.isFile()) {
@@ -222,7 +222,7 @@ public class Archiver {
 			folderName=submittingUserOrTeamId+"_LOCKED";
 			principalsAndPermissions.put(submittingUserOrTeamId, Collections.singleton(ACCESS_TYPE.READ));
 			String dataUnlockSynapsePrincipalId=getProperty("DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID", false);
-			if (dataUnlockSynapsePrincipalId!=null) {
+			if (!StringUtils.isEmpty(dataUnlockSynapsePrincipalId)) {
 				principalsAndPermissions.put(dataUnlockSynapsePrincipalId, READ_WRITE);
 			}
 		}
@@ -236,7 +236,7 @@ public class Archiver {
 
 	public Folder getOrCreateSubmissionUploadFolder(String submissionId, String submittingUserOrTeamId) throws SynapseException {
 		String shareImmediatelyString = getProperty("SHARE_RESULTS_IMMEDIATELY", false);
-		boolean shareImmediately = shareImmediatelyString==null ? true : new Boolean(shareImmediatelyString);
+		boolean shareImmediately = StringUtils.isEmpty(shareImmediatelyString) ? true : new Boolean(shareImmediatelyString);
 		Folder submitterFolder = getOrCreateSubmitterFolder(submittingUserOrTeamId, shareImmediately);
 
 		String name = submissionId;
@@ -259,7 +259,7 @@ public class Archiver {
 		String filePrefix = submissionId+nameSuffix;
 		filePrefix  = filePrefix.replaceAll("[^a-zA-Z0-9-]", "_");
 		// get the logs from the container
-		Path logFile = FileSystems.getDefault().getPath(getAgentTempDir().getAbsolutePath(), filePrefix+".txt");
+		Path logFile = FileSystems.getDefault().getPath(getTempDir().getAbsolutePath(), filePrefix+".txt");
 		String logTail=wes.getWorkflowLog(workflowJob, logFile, maxTailLengthInCharacters);
 		assert Files.exists(logFile);
 

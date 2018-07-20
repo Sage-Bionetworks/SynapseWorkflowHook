@@ -7,17 +7,17 @@ import java.io.File;
  * and also a file within that folder
  */
 public class FolderAndFile {
-	private File folder;
+	private ContainerRelativeFile folder;
 	private File file;
-	public FolderAndFile(File folder, File file) {
+	public FolderAndFile(ContainerRelativeFile folder, File file) {
 		super();
 		this.folder = folder;
 		this.file = file;
 	}
-	public File getFolder() {
+	public ContainerRelativeFile getFolder() {
 		return folder;
 	}
-	public void setFolder(File folder) {
+	public void setFolder(ContainerRelativeFile folder) {
 		this.folder = folder;
 	}
 	public File getFile() {
@@ -55,6 +55,6 @@ public class FolderAndFile {
 			return false;
 		return true;
 	}
-
+	
 
 }

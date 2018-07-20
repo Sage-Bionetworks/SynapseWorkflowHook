@@ -31,7 +31,6 @@ Links one or more Synapse Evaluation queues to a workflow engine.  Each Evaluati
 - `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.  If false then a separate process must 'unlock' files.  This is useful when workflows run on sensitive data and administration needs to control the volume of results returned to the workflow submitter
 - `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` - (optional) Synapse ID of user authorized to share (unlock) workflow output files 
 	(only required if `SHARE_RESULTS_IMMEDIATELY` is false)
-- `EXECUTION_STAGE` - (optional) one of `VALIDATION`, `EXECUTION`, `ALL`.  Defaults to `ALL`
 
 
 ### To use:
@@ -66,6 +65,9 @@ Create a .env file having the following environment variables:
 - `SYNAPSE_PASSWORD`: password for SYNAPSE_USERNAME
 - `WORKFLOW_OUTPUT_ROOT_ENTITY_ID`: the ID of the project generated in the set-up step, above
 - `EVALUATION_TEMPLATES`: the JSON object returned by the set up step
+- `NOTIFICATION_PRINCIPAL_ID` - (optional) Synapse ID of user or team to be notified of system issues. 
+- `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.
+- `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` - (optional) Synapse ID of user authorized to share (unlock) workflow output files 
 
 Now run:
 

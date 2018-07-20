@@ -31,8 +31,9 @@ import static org.sagebionetworks.MessageUtils.createLogsAvailableMessage;
 import static org.sagebionetworks.MessageUtils.createPipelineFailureMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowCompleteMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowFailedMessage;
-import static org.sagebionetworks.Utils.getAgentTempDir;
+import static org.sagebionetworks.Utils.getHostMountedScratchDir;
 import static org.sagebionetworks.Utils.getProperty;
+import static org.sagebionetworks.Utils.getTempDir;
 import static org.sagebionetworks.WorkflowUpdateStatus.DONE;
 import static org.sagebionetworks.WorkflowUpdateStatus.ERROR_ENCOUNTERED_DURING_EXECUTION;
 import static org.sagebionetworks.WorkflowUpdateStatus.IN_PROGRESS;
@@ -57,6 +58,7 @@ import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.fuin.utils4j.Utils4J;
 import org.json.JSONException;
@@ -138,7 +140,7 @@ public class WorkflowHook  {
 	
 	private static File getSynaspeConfigFile() throws IOException {
 		if (synapseConfigFile==null) {
-			synapseConfigFile = createTempFile(null, getAgentTempDir());
+			synapseConfigFile = createTempFile(null, getTempDir());
 			String username=getProperty(SYNAPSE_USERNAME_PROPERTY);
 			String password=getProperty(SYNAPSE_PASSWORD_PROPERTY);;
 			try (FileOutputStream fos = new FileOutputStream(synapseConfigFile)) {
@@ -169,8 +171,20 @@ public class WorkflowHook  {
 		return File.createTempFile("TMP", suffix, parentFolder);
 	}
 	
-	private static File createDirInTempDir() {
-		return new File(getAgentTempDir(), UUID.randomUUID().toString());
+	private static ContainerRelativeFile createDirInHostMountedScratchDir() {
+		ContainerRelativeFile result = new ContainerRelativeFile(UUID.randomUUID().toString());
+		File dir = result.getFullPath(getHostMountedScratchDir());
+		if (!dir.mkdir()) throw new RuntimeException("Unable to create "+dir.getAbsolutePath());
+		return result;
+	}
+	
+	public static void downloadZip(URL url, File tempDir, File target) throws IOException {
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); // needed for some https resources
+		File tempZipFile = createTempFile(".zip", tempDir);
+		try (InputStream is = url.openStream(); OutputStream os = new FileOutputStream(tempZipFile)) {
+			IOUtils.copy(is, os);
+		}
+		Utils4J.unzip(tempZipFile, target);
 	}
 
 	public Map<String,FolderAndFile> downloadWorkflowTemplates() throws Exception {
@@ -180,7 +194,7 @@ public class WorkflowHook  {
 			String entityId = evaluationToSynIDMap.get(evaluationId);
 			FileEntity fileEntity = synapse.getEntity(entityId, FileEntity.class);
 			FileHandle fh = synapse.getRawFileHandle(fileEntity.getDataFileHandleId());
-			File workflowTemplateFolder = createDirInTempDir();
+			ContainerRelativeFile workflowTemplateFolder = createDirInHostMountedScratchDir();
 			if (fh instanceof ExternalFileHandle) {
 				ExternalFileHandle efh = (ExternalFileHandle)fh;
 				String urlString = efh.getExternalURL();
@@ -188,29 +202,25 @@ public class WorkflowHook  {
 				String path = url.getPath();
 				String fileName = path.substring(path.lastIndexOf('/') + 1);
 				if (fileName.toLowerCase().endsWith("zip")) {
-					File downloadTarget = createTempFile(".zip", getAgentTempDir());
-					try (InputStream is = url.openStream(); OutputStream os = new FileOutputStream(downloadTarget)) {
-						IOUtils.copy(is, os);
-					}
-		   			Utils4J.unzip(downloadTarget, workflowTemplateFolder);
+					downloadZip(url, getTempDir(), workflowTemplateFolder.getFullPath(getHostMountedScratchDir()));
 					// get annotation for the CWL entry point.  Does the file exist?
 		   			Annotations annotations = synapse.getAnnotations(entityId);
 		   			String rootTemplateString = annotations.getStringAnnotations().get(ROOT_TEMPLATE_ANNOTATION_NAME).get(0);
 		   			// root file should be relative to unzip location
 		   			File rootTemplateFile = new File(rootTemplateString);
-		   			if (!(new File(workflowTemplateFolder,rootTemplateString)).exists()) {
+		   			if (!(new File(workflowTemplateFolder.getFullPath(getHostMountedScratchDir()),rootTemplateString)).exists()) {
 		   				throw new IllegalStateException(rootTemplateString+" is not in the unzipped archive downloaded from "+urlString);
 		   			}
 					// return (1) the folder where everything was unzipped (relative to the temp dir), 
 		   			// (2) the sub-path to the entry point
-		   			result.put(evaluationId, new FolderAndFile(new File(workflowTemplateFolder.getName()), rootTemplateFile));
+		   			result.put(evaluationId, new FolderAndFile(workflowTemplateFolder, rootTemplateFile));
 				} else {
 					throw new RuntimeException("Expected template to be a zip archive, bound found "+url);
 				}
 			} else {
-				File file = new File(workflowTemplateFolder, fh.getFileName());
+				File file = new File(workflowTemplateFolder.getFullPath(getHostMountedScratchDir()), fh.getFileName());
 				synapse.downloadFromFileEntityCurrentVersion(entityId, file);
-				result.put(evaluationId, new FolderAndFile(new File(workflowTemplateFolder.getName()), new File(fh.getFileName())));
+				result.put(evaluationId, new FolderAndFile(workflowTemplateFolder, new File(fh.getFileName())));
 			}
 		}
 		return result;
@@ -220,7 +230,7 @@ public class WorkflowHook  {
 	
 	private String getNotificationPrincipalId() throws SynapseException {
 		String id = getProperty(NOTIFICATION_PRINCIPAL_ID, false);
-		if (id!=null) return id;
+		if (!StringUtils.isEmpty(id)) return id;
 		// if not set then just use my own ID
 		if (myOwnPrincipalId!=null) return myOwnPrincipalId;
 		myOwnPrincipalId=synapse.getMyProfile().getOwnerId();
@@ -264,7 +274,7 @@ public class WorkflowHook  {
 				initializeSubmissionAnnotations(sb);
 				String workflowId = null;
 				try {
-					File workflowParameters = createTempFile(null, getAgentTempDir());
+					File workflowParameters = createTempFile(null, getHostMountedScratchDir());
 					try (FileOutputStream fos = new FileOutputStream(workflowParameters)) {
 						IOUtils.write("submissionId: "+submissionId+"\n", fos, Charset.forName("UTF-8"));
 						String submittingUserOrTeamId = SubmissionUtils.getSubmittingUserOrTeamId(sb.getSubmission());
@@ -276,7 +286,8 @@ public class WorkflowHook  {
 					Map<File,String> additionalROVolumes = new HashMap<File,String>();
 					File hostSynapseConfig = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), getSynaspeConfigFile().getPath());
 					additionalROVolumes.put(hostSynapseConfig, WORKFLOW_SYNPASE_CONFIG);
-					WorkflowJob newJob = wes.createWorkflowJob(templateFolderAndRootTemplate, workflowParameters, additionalROVolumes);
+					WorkflowJob newJob = wes.createWorkflowJob(templateFolderAndRootTemplate, 
+							new ContainerRelativeFile(workflowParameters.getName()), additionalROVolumes);
 					workflowId = newJob.getWorkflowId();
 					EvaluationUtils.setAnnotation(submissionStatus, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
 				} catch (InvalidSubmissionException e) {

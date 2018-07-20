@@ -74,7 +74,11 @@ public class Utils {
 		return getProperty(key, true);
 	}
 	
-	public static File getAgentTempDir() {
+	public static File getTempDir() {
+		return new File(System.getProperty("java.io.tmpdir"));
+	}
+	
+	public static File getHostMountedScratchDir() {
 		String agentTempDir = getProperty(AGENT_TEMP_DIR_PROPERTY_NAME, false);
 		if (agentTempDir==null) agentTempDir = AGENT_TEMP_DIR_DEFAULT;
 		return new File(agentTempDir);
