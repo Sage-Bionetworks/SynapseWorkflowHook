@@ -282,7 +282,7 @@ public class DockerUtils {
 				.createContainerCmd(imageReference)
 				.withHostConfig(hostConfig)
 				.withName(containerName)
-				.withNetworkDisabled(true)
+				.withNetworkDisabled(false)
 				.withMemorySwap(0L)
 				.withLogConfig(logConfig);
 		if (cmd != null) {

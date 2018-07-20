@@ -136,16 +136,17 @@ public class WorkflowHook  {
 
 	}
 	
-	private static File synapseConfigFile = null;
+	private static ContainerRelativeFile synapseConfigFile = null;
 	
-	private static File getSynaspeConfigFile() throws IOException {
+	private static ContainerRelativeFile getSynaspeConfigFile() throws IOException {
 		if (synapseConfigFile==null) {
-			synapseConfigFile = createTempFile(null, getTempDir());
+			File tempFile = createTempFile(null, getHostMountedScratchDir());
 			String username=getProperty(SYNAPSE_USERNAME_PROPERTY);
 			String password=getProperty(SYNAPSE_PASSWORD_PROPERTY);;
-			try (FileOutputStream fos = new FileOutputStream(synapseConfigFile)) {
+			try (FileOutputStream fos = new FileOutputStream(tempFile)) {
 				IOUtils.write("[authentication]\nusername="+username+"\npassword="+password+"\n", fos, Charset.forName("UTF-8"));
 			}
+			synapseConfigFile = new ContainerRelativeFile(tempFile.getName());
 		}
 		return synapseConfigFile;
 	}
@@ -284,7 +285,7 @@ public class WorkflowHook  {
 						IOUtils.write("adminUploadSynId: "+lockedFolder.getId()+"\n", fos, Charset.forName("UTF-8"));
 					}
 					Map<File,String> additionalROVolumes = new HashMap<File,String>();
-					File hostSynapseConfig = new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME), getSynaspeConfigFile().getPath());
+					File hostSynapseConfig = getSynaspeConfigFile().getFullPath(new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
 					additionalROVolumes.put(hostSynapseConfig, WORKFLOW_SYNPASE_CONFIG);
 					WorkflowJob newJob = wes.createWorkflowJob(templateFolderAndRootTemplate, 
 							new ContainerRelativeFile(workflowParameters.getName()), additionalROVolumes);

@@ -1,6 +1,6 @@
 Dear ##team##:
 
-Your workflow ##submissionId## is in progress.  Log files produced while your workflow is running will be periodically uploaded here: https://www.synapse.org/#!Synapse:##folder##.  Further notification will be provided when your workflow is complete
+Your workflow ##submissionId## is in progress.  Log files produced while your workflow is running will be periodically uploaded here: https://www.synapse.org/#!Synapse:##folder##.  Further notification will be provided when your workflow is complete.
 
 Sincerely,
 
