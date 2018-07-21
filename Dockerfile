@@ -1,4 +1,4 @@
-FROM maven:3.5.3-jdk-11
+FROM maven:3-jdk-11
 COPY pom.xml *.sh /
 COPY src /src
 RUN mvn clean install
