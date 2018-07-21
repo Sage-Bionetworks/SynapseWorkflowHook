@@ -6,17 +6,30 @@ import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
 import static org.sagebionetworks.Constants.WORKFLOW_TEMP_DIR;
 import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
+import static org.sagebionetworks.Utils.createTempFile;
 import static org.sagebionetworks.Utils.findRunningWorkflowJobs;
+import static org.sagebionetworks.Utils.getHostMountedScratchDir;
 import static org.sagebionetworks.Utils.getProperty;
+import static org.sagebionetworks.Utils.getTempDir;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
+import org.apache.commons.io.IOUtils;
+import org.fuin.utils4j.Utils4J;
+import org.sagebionetworks.repo.model.Folder;
 
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
 import com.github.dockerjava.api.model.Container;
@@ -35,29 +48,84 @@ public class WES {
 	public WES(DockerUtils dockerUtils) {
 		this.dockerUtils=dockerUtils;
 	}
+	
+	private static ContainerRelativeFile createDirInHostMountedScratchDir() {
+		ContainerRelativeFile result = new ContainerRelativeFile(UUID.randomUUID().toString(), getHostMountedScratchDir(), new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
+		File dir = result.getContainerPath();
+		if (!dir.mkdir()) throw new RuntimeException("Unable to create "+dir.getAbsolutePath());
+		return result;
+	}
+	
+	private static void downloadZip(URL url, File tempDir, File target) throws IOException {
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); // needed for some https resources
+		File tempZipFile = createTempFile(".zip", tempDir);
+		try (InputStream is = url.openStream(); OutputStream os = new FileOutputStream(tempZipFile)) {
+			IOUtils.copy(is, os);
+		}
+		Utils4J.unzip(tempZipFile, target);
+	}
+
+	private ContainerRelativeFile downloadWorkflowFromURL(URL workflowUrl, String entrypoint) throws IOException {
+		ContainerRelativeFile workflowTemplateFolder = createDirInHostMountedScratchDir();
+		String path = workflowUrl.getPath();
+		if (path.toLowerCase().endsWith("zip")) {
+			downloadZip(workflowUrl, getTempDir(), workflowTemplateFolder.getContainerPath());
+   			// root file should be relative to unzip location
+   			if (!(new File(workflowTemplateFolder.getContainerPath(),entrypoint)).exists()) {
+   				throw new IllegalStateException(entrypoint+" is not in the unzipped archive downloaded from "+workflowUrl);
+   			}
+		} else {
+			throw new RuntimeException("Expected template to be a zip archive, bound found "+path);
+		}
+		return workflowTemplateFolder;
+	}
+	
+	private ContainerRelativeFile createWorkflowParametersYamlFile(WorkflowParameters params) throws IOException {
+		File workflowParameters = createTempFile(".yml", getHostMountedScratchDir());
+		try (FileOutputStream fos = new FileOutputStream(workflowParameters)) {
+			IOUtils.write("submissionId: "+params.getSubmissionId()+"\n", fos, Charset.forName("UTF-8"));
+			IOUtils.write("submitterUploadSynId: "+params.getSubmitterUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
+			IOUtils.write("adminUploadSynId: "+params.getAdminUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
+		}
+		return new ContainerRelativeFile(workflowParameters.getName(), getHostMountedScratchDir(), new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
+	}
+	
+	
+	private Map<File,String> additionalROVolumeMounts = new HashMap<File,String>();
+	
+	/*
+	 * Used for configuration files required by the workflow engine
+	 */
+	public void addWorkflowEngineFile(ContainerRelativeFile file, File workflowEngineFolder, String relativePath) {
+		additionalROVolumeMounts.put(file.getHostPath(), (new File(workflowEngineFolder, relativePath)).getAbsolutePath());
+	}
 
 	/**
 	 * This is analogous to POST /workflows in WES
-	 * @param templateFolderAndRootTemplate the file path to the workflow and root template, relative to the temp folder
-	 * @param workflowParameters the file path to the workflow parameters, relative to the temp folder
+	 * @param workflowUrl the URL to the archive of workflow files
+	 * @param entrypoint the entry point (a file path) within the unzipped workflow archive
+	 * @param workflowParameters the parameters to be passed to the workflow
 	 * @return the created workflow job
+	 * @throws IOException
+	 * @throws InvalidSubmissionException
 	 */
-	public WorkflowJob createWorkflowJob(FolderAndFile templateFolderAndRootTemplate, ContainerRelativeFile workflowParameters, Map<File,String> additionalROVolumeMounts) throws IOException, InvalidSubmissionException {
-		ContainerRelativeFile templateFolder = templateFolderAndRootTemplate.getFolder(); // relative to 'temp' folder which is mounted to the container
-		File rootTemplate = templateFolderAndRootTemplate.getFile(); // relative to templateFolder
+	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, WorkflowParameters workflowParameters) throws IOException, InvalidSubmissionException {
+		ContainerRelativeFile templateFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
+		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters);
+		
 		// the two paths, from the point of view of the host running this process
-		File hostTemplateFolder = templateFolder.getFullPath(new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
-		File hostWorkflowParameters = workflowParameters.getFullPath(new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
+		File hostTemplateFolder = templateFolder.getHostPath();
+		File hostWorkflowParameters = workflowParametersFile.getHostPath();
 		// the two paths, from the point of view of the workflow engine
-		File workflowTemplateFolder = templateFolder.getFullPath(new File(WORKFLOW_TEMP_DIR));
-		File workflowWorkflowParameters = workflowParameters.getFullPath(new File(WORKFLOW_TEMP_DIR));
+		File workflowTemplateFolder = templateFolder.getAltPath(new File(WORKFLOW_TEMP_DIR));
+		File workflowWorkflowParameters = workflowParametersFile.getAltPath(new File(WORKFLOW_TEMP_DIR));
 
 		List<String> cmd = Arrays.asList(
 				"toil-cwl-runner", 
 				"--defaultMemory",  "100M", 
 				"--retryCount",  "0", 
 				"--defaultDisk", "1000000",
-				rootTemplate.getPath(),
+				entrypoint,
 				workflowWorkflowParameters.getAbsolutePath()
 				);
 

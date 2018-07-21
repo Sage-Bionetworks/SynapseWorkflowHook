@@ -1,37 +1,36 @@
 package org.sagebionetworks;
 
-import java.io.File;
-
 /*
  * Data object used to hold the file path to a folder
  * and also a file within that folder
  */
-public class FolderAndFile {
+public class FolderAndRelativePath {
 	private ContainerRelativeFile folder;
-	private File file;
-	public FolderAndFile(ContainerRelativeFile folder, File file) {
+	private String relativePath;
+	public FolderAndRelativePath(ContainerRelativeFile folder, String relativePath) {
 		super();
 		this.folder = folder;
-		this.file = file;
+		this.relativePath = relativePath;
 	}
+
 	public ContainerRelativeFile getFolder() {
 		return folder;
 	}
 	public void setFolder(ContainerRelativeFile folder) {
 		this.folder = folder;
 	}
-	public File getFile() {
-		return file;
+	public String getRelativePath() {
+		return relativePath;
 	}
-	public void setFile(File file) {
-		this.file = file;
+	public void setRelativePath(String relativePath) {
+		this.relativePath = relativePath;
 	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((file == null) ? 0 : file.hashCode());
 		result = prime * result + ((folder == null) ? 0 : folder.hashCode());
+		result = prime * result + ((relativePath == null) ? 0 : relativePath.hashCode());
 		return result;
 	}
 	@Override
@@ -42,19 +41,18 @@ public class FolderAndFile {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		FolderAndFile other = (FolderAndFile) obj;
-		if (file == null) {
-			if (other.file != null)
-				return false;
-		} else if (!file.equals(other.file))
-			return false;
+		FolderAndRelativePath other = (FolderAndRelativePath) obj;
 		if (folder == null) {
 			if (other.folder != null)
 				return false;
 		} else if (!folder.equals(other.folder))
 			return false;
+		if (relativePath == null) {
+			if (other.relativePath != null)
+				return false;
+		} else if (!relativePath.equals(other.relativePath))
+			return false;
 		return true;
 	}
-	
 
 }

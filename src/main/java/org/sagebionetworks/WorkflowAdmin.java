@@ -64,10 +64,6 @@ public class WorkflowAdmin {
 				String projectId = workflowAdmin.createProject();
 				String fileEntityId = workflowAdmin.createExternalFileEntity(workflowUrl, projectId, rootTemplate);
 				workflowAdmin.setUp(fileEntityId, projectId);
-			} else if (StringUtils.isEmpty(workflowUrl)) {
-				String projectId = workflowAdmin.createProject();
-				String fileEntityId = workflowAdmin.createFileEntityForFile(args[1], projectId);
-				workflowAdmin.setUp(fileEntityId, projectId);
 			} else {
 				throw new IllegalArgumentException("invalid combination of env var's");
 			}

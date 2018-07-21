@@ -45,19 +45,16 @@ public class WorkflowHookTest {
 	private static final String USER_ID = "000";
 	private static final String EVALUATION_ID = "111";
 	private static final String SUBMISSION_ID = "222";
-	private static final String FOLDER_ID = "333";
 	private static final String WORKFLOW_OUTPUT_ROOT_ENTITY_ID = "syn1234";
 	
-	private static final File MOCK_TEMPLATE_FOLDER;
-	private static final File MOCK_TEMPLATE_FILE;
-	private static final FolderAndFile MOCK_TEMPLATE_FOLDER_AND_FILE;
+	private static final URL WORKFLOW_URL;
+	private static final String WORKFLOW_ENTRYPOINT = "SynapseWorkflowExample-master/workflow-entrypoint.cwl";
 	
 	static {
+		
 		try {
-			MOCK_TEMPLATE_FOLDER = File.createTempFile("foo", "bar", new File(System.getProperty("java.io.tmpdir")));
-			MOCK_TEMPLATE_FILE = File.createTempFile("foo", "bar");
-			MOCK_TEMPLATE_FOLDER_AND_FILE = new FolderAndFile(new ContainerRelativeFile(MOCK_TEMPLATE_FOLDER.getName()), MOCK_TEMPLATE_FILE);
-		} catch (IOException e) {
+			WORKFLOW_URL = new URL("https://github.com/Sage-Bionetworks/SynapseWorkflowExample/archive/master.zip");
+		}catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -84,8 +81,6 @@ public class WorkflowHookTest {
 		System.clearProperty("SYNAPSE_USERNAME");
 		System.clearProperty("SYNAPSE_PASSWORD");
 	}
-	
-	// TODO these tests need to be completed
 
 	@Test
 	public void testCreateNewWorkflowJobs() throws Throwable {
@@ -103,7 +98,7 @@ public class WorkflowHookTest {
 		Folder folder = new Folder();
 		when(synapse.createEntity(any(Folder.class))).thenReturn(folder);
 		// method under test
-		workflowHook.createNewWorkflowJobs(EVALUATION_ID, MOCK_TEMPLATE_FOLDER_AND_FILE);
+		workflowHook.createNewWorkflowJobs(EVALUATION_ID, WORKFLOW_URL, WORKFLOW_ENTRYPOINT);
 		
 		
 		verify(evaluationUtils).selectSubmissions(EVALUATION_ID, SubmissionStatusEnum.RECEIVED);
@@ -112,15 +107,6 @@ public class WorkflowHookTest {
 	@Test 
 	public void testUpdateWorkflowJobs() throws Throwable {
 		workflowHook.updateWorkflowJobs(EVALUATION_ID);
-	}
-	
-	@Test
-	public void testDownloadZip() throws Throwable {
-		String urlString = "https://github.com/Sage-Bionetworks/SynapseWorkflowExample/archive/master.zip";
-		URL url = new URL(urlString);
-		File tempDir = new File(System.getProperty("java.io.tmpdir"));
-		File target = tempDir;
-		WorkflowHook.downloadZip(url, tempDir, target);
 	}
 
 }

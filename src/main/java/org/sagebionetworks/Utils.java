@@ -74,6 +74,10 @@ public class Utils {
 		return getProperty(key, true);
 	}
 	
+	public static File createTempFile(String suffix, File parentFolder) throws IOException {
+		return File.createTempFile("TMP", suffix, parentFolder);
+	}
+	
 	public static File getTempDir() {
 		return new File(System.getProperty("java.io.tmpdir"));
 	}
