@@ -4,8 +4,9 @@ public class WorkflowParameters {
 	private String submissionId;
 	private String adminUploadSynId;
 	private String submitterUploadSynId;
-	public WorkflowParameters(String submissionId, String adminUploadSynId, String submitterUploadSynId) {
-		super();
+	private String synapseWorkflowReference;
+	public WorkflowParameters(String submissionId, String synapseWorkflowReference, String adminUploadSynId, String submitterUploadSynId) {
+		this.synapseWorkflowReference=synapseWorkflowReference;
 		this.submissionId = submissionId;
 		this.adminUploadSynId = adminUploadSynId;
 		this.submitterUploadSynId = submitterUploadSynId;
@@ -28,6 +29,13 @@ public class WorkflowParameters {
 	public void setSubmitterUploadSynId(String submitterUploadSynId) {
 		this.submitterUploadSynId = submitterUploadSynId;
 	}
+	
+	public String getSynapseWorkflowReference() {
+		return synapseWorkflowReference;
+	}
+	public void setSynapseWorkflowReference(String synapseWorkflowReference) {
+		this.synapseWorkflowReference = synapseWorkflowReference;
+	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -35,6 +43,7 @@ public class WorkflowParameters {
 		result = prime * result + ((adminUploadSynId == null) ? 0 : adminUploadSynId.hashCode());
 		result = prime * result + ((submissionId == null) ? 0 : submissionId.hashCode());
 		result = prime * result + ((submitterUploadSynId == null) ? 0 : submitterUploadSynId.hashCode());
+		result = prime * result + ((synapseWorkflowReference == null) ? 0 : synapseWorkflowReference.hashCode());
 		return result;
 	}
 	@Override
@@ -60,6 +69,11 @@ public class WorkflowParameters {
 			if (other.submitterUploadSynId != null)
 				return false;
 		} else if (!submitterUploadSynId.equals(other.submitterUploadSynId))
+			return false;
+		if (synapseWorkflowReference == null) {
+			if (other.synapseWorkflowReference != null)
+				return false;
+		} else if (!synapseWorkflowReference.equals(other.synapseWorkflowReference))
 			return false;
 		return true;
 	}

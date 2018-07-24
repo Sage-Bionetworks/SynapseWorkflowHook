@@ -164,9 +164,9 @@ public class WorkflowHook  {
 		return result;
 	}
 
-	public Map<String,WorkflowURLAndEntrypoint> getWorkflowURLAndEntrypoint() throws Exception {
+	public Map<String,WorkflowURLEntrypointAndSynapseRef> getWorkflowURLAndEntrypoint() throws Exception {
 		Map<String,String> evaluationToSynIDMap = getTemplateSynapseIds();
-		Map<String,WorkflowURLAndEntrypoint> result = new HashMap<String,WorkflowURLAndEntrypoint>();
+		Map<String,WorkflowURLEntrypointAndSynapseRef> result = new HashMap<String,WorkflowURLEntrypointAndSynapseRef>();
 		for (String evaluationId : evaluationToSynIDMap.keySet()) {
 			String entityId = evaluationToSynIDMap.get(evaluationId);
 			FileEntity fileEntity = synapse.getEntity(entityId, FileEntity.class);
@@ -178,7 +178,7 @@ public class WorkflowHook  {
 				// get annotation for the CWL entry point.  Does the file exist?
 	   			Annotations annotations = synapse.getAnnotations(entityId);
 	   			String rootTemplateString = annotations.getStringAnnotations().get(ROOT_TEMPLATE_ANNOTATION_NAME).get(0);
-	   			result.put(evaluationId, new WorkflowURLAndEntrypoint(url, rootTemplateString));
+	   			result.put(evaluationId, new WorkflowURLEntrypointAndSynapseRef(url, rootTemplateString, entityId));
 			} else {
 				throw new IllegalArgumentException("Only ExternalFileHandle is supported.");
 			}
@@ -198,13 +198,13 @@ public class WorkflowHook  {
 	}
 
 	public void execute() throws Throwable {
-		Map<String,WorkflowURLAndEntrypoint> evaluationIdToTemplateMap = getWorkflowURLAndEntrypoint();
+		Map<String,WorkflowURLEntrypointAndSynapseRef> evaluationIdToTemplateMap = getWorkflowURLAndEntrypoint();
 		while (!shutdownHook.shouldShutDown()) { // this allows a system shut down to shut down the agent
 			log.info("Top level loop: checking progress or starting new job.");
 
 			for (String evaluationId : getEvaluationIds()) {
-				WorkflowURLAndEntrypoint workflow = evaluationIdToTemplateMap.get(evaluationId);
-				createNewWorkflowJobs(evaluationId, workflow.getWorkflowUrl(), workflow.getEntryPoint());
+				WorkflowURLEntrypointAndSynapseRef workflow = evaluationIdToTemplateMap.get(evaluationId);
+				createNewWorkflowJobs(evaluationId, workflow);
 				updateWorkflowJobs(evaluationId);
 			}
 
@@ -216,7 +216,7 @@ public class WorkflowHook  {
 		} // end while()
 	} // end execute()
 
-	public void createNewWorkflowJobs(String evaluationId, URL workflowUrl, String entrypoint) throws Throwable {
+	public void createNewWorkflowJobs(String evaluationId, WorkflowURLEntrypointAndSynapseRef workflow) throws Throwable {
 		List<SubmissionBundle> receivedSubmissions = 
 				evaluationUtils.selectSubmissions(evaluationId, getInitialSubmissionState() );
 		for (SubmissionBundle sb : receivedSubmissions) {
@@ -238,9 +238,10 @@ public class WorkflowHook  {
 					String submittingUserOrTeamId = SubmissionUtils.getSubmittingUserOrTeamId(sb.getSubmission());
 					Folder sharedFolder=archiver.getOrCreateSubmitterFolder(submittingUserOrTeamId, true);
 					Folder lockedFolder=archiver.getOrCreateSubmitterFolder(submittingUserOrTeamId, false);
-					WorkflowParameters workflowParameters = new WorkflowParameters(sb.getSubmission().getId(), lockedFolder.getId(), sharedFolder.getId());
+					WorkflowParameters workflowParameters = new WorkflowParameters(
+							sb.getSubmission().getId(), workflow.getSynapseId(), lockedFolder.getId(), sharedFolder.getId());
 					wes.addWorkflowEngineFile(getSynapseConfigFile(), new File(WORKFLOW_SYNAPSE_CONFIG_FOLDER), WORKFLOW_SYNAPSE_CONFIG_FILE_NAME);
-					WorkflowJob newJob = wes.createWorkflowJob(workflowUrl, entrypoint, workflowParameters);
+					WorkflowJob newJob = wes.createWorkflowJob(workflow.getWorkflowUrl(), workflow.getEntryPoint(), workflowParameters);
 					workflowId = newJob.getWorkflowId();
 					EvaluationUtils.setAnnotation(submissionStatus, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
 				} catch (InvalidSubmissionException e) {

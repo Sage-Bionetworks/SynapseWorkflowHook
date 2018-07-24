@@ -3,7 +3,6 @@ package org.sagebionetworks;
 import static org.sagebionetworks.Constants.DUMP_PROGRESS_SHELL_COMMAND;
 import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
-import static org.sagebionetworks.Constants.WORKFLOW_TEMP_DIR;
 import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
 import static org.sagebionetworks.Utils.createTempFile;
@@ -29,7 +28,6 @@ import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
 import org.fuin.utils4j.Utils4J;
-import org.sagebionetworks.repo.model.Folder;
 
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
 import com.github.dockerjava.api.model.Container;
@@ -63,6 +61,7 @@ public class WES {
 			IOUtils.copy(is, os);
 		}
 		Utils4J.unzip(tempZipFile, target);
+		tempZipFile.delete();
 	}
 
 	private ContainerRelativeFile downloadWorkflowFromURL(URL workflowUrl, String entrypoint) throws IOException {
@@ -80,14 +79,15 @@ public class WES {
 		return workflowTemplateFolder;
 	}
 	
-	private ContainerRelativeFile createWorkflowParametersYamlFile(WorkflowParameters params) throws IOException {
-		File workflowParameters = createTempFile(".yml", getHostMountedScratchDir());
+	private ContainerRelativeFile createWorkflowParametersYamlFile(WorkflowParameters params, ContainerRelativeFile targetFolder) throws IOException {
+		File workflowParameters = createTempFile(".yml", targetFolder.getContainerPath());
 		try (FileOutputStream fos = new FileOutputStream(workflowParameters)) {
 			IOUtils.write("submissionId: "+params.getSubmissionId()+"\n", fos, Charset.forName("UTF-8"));
+			IOUtils.write("workflowSynapseId: "+params.getSynapseWorkflowReference()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("submitterUploadSynId: "+params.getSubmitterUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("adminUploadSynId: "+params.getAdminUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
 		}
-		return new ContainerRelativeFile(workflowParameters.getName(), getHostMountedScratchDir(), new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
+		return new ContainerRelativeFile(workflowParameters.getName(), targetFolder.getContainerPath(), targetFolder.getHostPath());
 	}
 	
 	
@@ -111,22 +111,27 @@ public class WES {
 	 */
 	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, WorkflowParameters workflowParameters) throws IOException, InvalidSubmissionException {
 		ContainerRelativeFile templateFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
-		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters);
+		// Note that we create the param's file within the folder to which we've downloaded the workflow template
+		// This gives us a single folder to mount to the Toil container
+		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, templateFolder);
 		
-		// the two paths, from the point of view of the host running this process
+		// The folder with the workflow and param's, from the POV of the host
 		File hostTemplateFolder = templateFolder.getHostPath();
-		File hostWorkflowParameters = workflowParametersFile.getHostPath();
-		// the two paths, from the point of view of the workflow engine
-		File workflowTemplateFolder = templateFolder.getAltPath(new File(WORKFLOW_TEMP_DIR));
-		File workflowWorkflowParameters = workflowParametersFile.getAltPath(new File(WORKFLOW_TEMP_DIR));
-
+		// To run Toil inside Docker we need to make certain settings as explained here:
+		// https://github.com/brucehoff/wiki/wiki/Problem-running-Toil-in-a-container
+		// For one thing, the path to the folder from the workflow's POV must be the SAME as from the host's POV.
+		File workflowTemplateFolder = hostTemplateFolder;
+		
+		// further, we must set 'workDir' and 'noLinkImports':
 		List<String> cmd = Arrays.asList(
 				"toil-cwl-runner", 
 				"--defaultMemory",  "100M", 
 				"--retryCount",  "0", 
 				"--defaultDisk", "1000000",
+				"--workDir",  workflowTemplateFolder.getAbsolutePath(), 
+				"--noLinkImports",
 				entrypoint,
-				workflowWorkflowParameters.getAbsolutePath()
+				workflowParametersFile.getHostPath().getAbsolutePath()
 				);
 
 		Map<File,String> rwVolumes = new HashMap<File,String>();
@@ -135,7 +140,6 @@ public class WES {
 		String containerId = null;
 		Map<File,String> roVolumes = new HashMap<File,String>(additionalROVolumeMounts);
 		rwVolumes.put(hostTemplateFolder, workflowTemplateFolder.getAbsolutePath());
-		roVolumes.put(hostWorkflowParameters, workflowWorkflowParameters.getAbsolutePath());
 		String workingDir = workflowTemplateFolder.getAbsolutePath();
 		try {
 			// normally would pull from quqy.io ("quay.io/ucsc_cgl/toil")

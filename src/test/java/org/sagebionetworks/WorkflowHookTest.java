@@ -45,6 +45,10 @@ public class WorkflowHookTest {
 	private static final String USER_ID = "000";
 	private static final String EVALUATION_ID = "111";
 	private static final String SUBMISSION_ID = "222";
+	private static final String WORKFLOW_SYN_ID = "3333";
+	
+	private static final WorkflowURLEntrypointAndSynapseRef WORKFLOW_REF;
+	
 	private static final String WORKFLOW_OUTPUT_ROOT_ENTITY_ID = "syn1234";
 	
 	private static final URL WORKFLOW_URL;
@@ -54,6 +58,7 @@ public class WorkflowHookTest {
 		
 		try {
 			WORKFLOW_URL = new URL("https://github.com/Sage-Bionetworks/SynapseWorkflowExample/archive/master.zip");
+			WORKFLOW_REF = new WorkflowURLEntrypointAndSynapseRef(WORKFLOW_URL, WORKFLOW_ENTRYPOINT, WORKFLOW_SYN_ID);
 		}catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -98,7 +103,7 @@ public class WorkflowHookTest {
 		Folder folder = new Folder();
 		when(synapse.createEntity(any(Folder.class))).thenReturn(folder);
 		// method under test
-		workflowHook.createNewWorkflowJobs(EVALUATION_ID, WORKFLOW_URL, WORKFLOW_ENTRYPOINT);
+		workflowHook.createNewWorkflowJobs(EVALUATION_ID, WORKFLOW_REF);
 		
 		
 		verify(evaluationUtils).selectSubmissions(EVALUATION_ID, SubmissionStatusEnum.RECEIVED);

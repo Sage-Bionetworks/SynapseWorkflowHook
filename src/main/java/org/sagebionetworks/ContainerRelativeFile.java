@@ -31,13 +31,5 @@ public class ContainerRelativeFile {
 	public File getHostPath() {
 		return hostPath;
 	}
-	
-	/*
-	 * Constructs a full path from any root, e.g. for use when root is mounted under a 
-	 * different name in another container.
-	 */
-	public File getAltPath(File root) {
-		return new File(root, relativePath);
-	}
 
 }
