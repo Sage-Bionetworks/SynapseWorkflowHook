@@ -11,6 +11,7 @@ import static org.sagebionetworks.Utils.getHostMountedScratchDir;
 import static org.sagebionetworks.Utils.getProperty;
 import static org.sagebionetworks.Utils.getTempDir;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -28,6 +29,8 @@ import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
 import org.fuin.utils4j.Utils4J;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
 import com.github.dockerjava.api.model.Container;
@@ -43,6 +46,15 @@ import com.github.dockerjava.api.model.Container;
 public class WES {
 	private DockerUtils dockerUtils;
 	
+	private static final String ZIP_SUFFIX = ".zip";
+	private static final String GA4GH_TRS_FILE_FRAGMENT = "/api/ga4gh/v2/tools";
+
+	static {
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); // needed for some https resources
+	}
+	
+	private Map<File,String> additionalROVolumeMounts = new HashMap<File,String>();
+	
 	public WES(DockerUtils dockerUtils) {
 		this.dockerUtils=dockerUtils;
 	}
@@ -55,7 +67,6 @@ public class WES {
 	}
 	
 	private static void downloadZip(URL url, File tempDir, File target) throws IOException {
-		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); // needed for some https resources
 		File tempZipFile = createTempFile(".zip", tempDir);
 		try (InputStream is = url.openStream(); OutputStream os = new FileOutputStream(tempZipFile)) {
 			IOUtils.copy(is, os);
@@ -63,18 +74,54 @@ public class WES {
 		Utils4J.unzip(tempZipFile, target);
 		tempZipFile.delete();
 	}
-
-	private ContainerRelativeFile downloadWorkflowFromURL(URL workflowUrl, String entrypoint) throws IOException {
+	
+	private static String downloadWebDocument(URL url) throws IOException {
+		String result;
+		try (InputStream is = url.openStream(); ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+			IOUtils.copy(is, os);
+			result = os.toString();
+		}
+		return result;
+	}
+	
+	private static final String PRIMARY_DESCRIPTOR_TYPE = "PRIMARY_DESCRIPTOR";
+	private static final String SECONDARY_DESCRIPTOR_TYPE = "SECONDARY_DESCRIPTOR";
+	
+	
+	public static ContainerRelativeFile downloadWorkflowFromURL(URL workflowUrl, String entrypoint) throws IOException {
 		ContainerRelativeFile workflowTemplateFolder = createDirInHostMountedScratchDir();
 		String path = workflowUrl.getPath();
-		if (path.toLowerCase().endsWith("zip")) {
+		if (path.toLowerCase().endsWith(ZIP_SUFFIX)) {
 			downloadZip(workflowUrl, getTempDir(), workflowTemplateFolder.getContainerPath());
    			// root file should be relative to unzip location
    			if (!(new File(workflowTemplateFolder.getContainerPath(),entrypoint)).exists()) {
    				throw new IllegalStateException(entrypoint+" is not in the unzipped archive downloaded from "+workflowUrl);
    			}
+		} else if (path.contains(GA4GH_TRS_FILE_FRAGMENT)) {
+			URL filesUrl = new URL(workflowUrl.toString()+"/files");
+			String filesContent = downloadWebDocument(filesUrl);
+			JSONArray files = new JSONArray(filesContent);
+			for (int i=0; i<files.length(); i++) {
+				JSONObject file = files.getJSONObject(i);
+				String fileType = file.getString("file_type");
+				String filePath = file.getString("path");
+				if (PRIMARY_DESCRIPTOR_TYPE.equals(fileType)) {
+					if (!filePath.equals(entrypoint)) throw new RuntimeException("Expected entryPoint "+entrypoint+" but found "+path);
+				} else if (SECONDARY_DESCRIPTOR_TYPE.equals(fileType)) {
+					// OK
+				} else {
+					throw new RuntimeException("Unexpected file_type "+fileType);
+				}
+				URL descriptorUrl = new URL(workflowUrl.toString()+"/descriptor/"+filePath);
+				String descriptorContent = downloadWebDocument(descriptorUrl);
+				JSONObject descriptor = new JSONObject(descriptorContent);
+				try (OutputStream os = new FileOutputStream(new File(workflowTemplateFolder.getContainerPath(), filePath))) {
+					IOUtils.write(descriptor.getString("descriptor"), os, Charset.forName("utf-8"));
+				}
+			}
+			
 		} else {
-			throw new RuntimeException("Expected template to be a zip archive, bound found "+path);
+			throw new RuntimeException("Expected template to be a zip archive or TRS files URL, bound found "+path);
 		}
 		return workflowTemplateFolder;
 	}
@@ -90,9 +137,6 @@ public class WES {
 		return new ContainerRelativeFile(workflowParameters.getName(), targetFolder.getContainerPath(), targetFolder.getHostPath());
 	}
 	
-	
-	private Map<File,String> additionalROVolumeMounts = new HashMap<File,String>();
-	
 	/*
 	 * Used for configuration files required by the workflow engine
 	 */
@@ -103,7 +147,7 @@ public class WES {
 	/**
 	 * This is analogous to POST /workflows in WES
 	 * @param workflowUrl the URL to the archive of workflow files
-	 * @param entrypoint the entry point (a file path) within the unzipped workflow archive
+	 * @param entrypoint the entry point (a file path) within an unzipped workflow archive
 	 * @param workflowParameters the parameters to be passed to the workflow
 	 * @return the created workflow job
 	 * @throws IOException

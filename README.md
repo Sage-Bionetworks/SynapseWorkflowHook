@@ -43,8 +43,15 @@ docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx \
 -e WORKFLOW_TEMPLATE_URL=http://xxxxxx -e ROOT_TEMPLATE=xxxxx workflow-hook /set_up.sh
 ```
 
-where `WORKFLOW_TEMPLATE_URL` is a link to a zip file and `ROOT_TEMPLATE` is a path within the zip where a workflow file can be found.
+where `WORKFLOW_TEMPLATE_URL` is a link to a zip file and `ROOT_TEMPLATE` is a path within the zip where a workflow file can be found.  To use a workflow in Dockstore:
 
+```
+docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx \
+-e WORKFLOW_TEMPLATE_URL=https://dockstore.org:8443/api/ga4gh/v2/tools/{id}/versions/{version_id}/CWL \
+-e ROOT_TEMPLATE=xxxxx workflow-hook /set_up.sh
+
+```
+TODO:  Automatically lookup ROOT_TEMPLATE in Dockstore
 
 Will print out created Project ID and the value for the `EVALUATION_TEMPLATES` in the following step.
 
