@@ -40,7 +40,7 @@ To run:
 
 ```
 docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx \
--e WORKFLOW_TEMPLATE_URL=http://xxxxxx -e ROOT_TEMPLATE=xxxxx workflow-hook /set_up.sh
+-e WORKFLOW_TEMPLATE_URL=http://xxxxxx -e ROOT_TEMPLATE=xxxxx sagebionetworks/synapseworkflowhook /set_up.sh
 ```
 
 where `WORKFLOW_TEMPLATE_URL` is a link to a zip file and `ROOT_TEMPLATE` is a path within the zip where a workflow file can be found.  To use a workflow in Dockstore:
@@ -48,7 +48,7 @@ where `WORKFLOW_TEMPLATE_URL` is a link to a zip file and `ROOT_TEMPLATE` is a p
 ```
 docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx \
 -e WORKFLOW_TEMPLATE_URL=https://dockstore.org:8443/api/ga4gh/v2/tools/{id}/versions/{version_id}/CWL \
--e ROOT_TEMPLATE=xxxxx workflow-hook /set_up.sh
+-e ROOT_TEMPLATE=xxxxx sagebionetworks/synapseworkflowhook /set_up.sh
 
 ```
 TODO:  Automatically lookup ROOT_TEMPLATE in Dockstore
@@ -80,7 +80,7 @@ docker-compose up
 
 ```
 docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx -e EVALUATION_ID=xxxxx \
--v /path/to/workflow/job:/workflowjob workflow-hook /submit.sh
+-v /path/to/workflow/job:/workflowjob sagebionetworks/synapseworkflowhook /submit.sh
 ```
 where `EVALUATION_ID` is one of the keys in the `EVALUATION_TEMPLATES` map returned from the set-up step
 
