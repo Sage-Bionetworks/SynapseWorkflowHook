@@ -154,17 +154,17 @@ public class WES {
 	 * @throws InvalidSubmissionException
 	 */
 	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, WorkflowParameters workflowParameters) throws IOException, InvalidSubmissionException {
-		ContainerRelativeFile templateFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
+		ContainerRelativeFile workflowFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
 		// Note that we create the param's file within the folder to which we've downloaded the workflow template
 		// This gives us a single folder to mount to the Toil container
-		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, templateFolder);
+		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, workflowFolder);
 		
 		// The folder with the workflow and param's, from the POV of the host
-		File hostTemplateFolder = templateFolder.getHostPath();
+		File hostWorkflowFolder = workflowFolder.getHostPath();
 		// To run Toil inside Docker we need to make certain settings as explained here:
 		// https://github.com/brucehoff/wiki/wiki/Problem-running-Toil-in-a-container
 		// For one thing, the path to the folder from the workflow's POV must be the SAME as from the host's POV.
-		File workflowTemplateFolder = hostTemplateFolder;
+		File workflowRunnerWorkflowFolder = hostWorkflowFolder;
 		
 		// further, we must set 'workDir' and 'noLinkImports':
 		List<String> cmd = Arrays.asList(
@@ -172,7 +172,7 @@ public class WES {
 				"--defaultMemory",  "100M", 
 				"--retryCount",  "0", 
 				"--defaultDisk", "1000000",
-				"--workDir",  workflowTemplateFolder.getAbsolutePath(), 
+				"--workDir",  workflowRunnerWorkflowFolder.getAbsolutePath(), 
 				"--noLinkImports",
 				entrypoint,
 				workflowParametersFile.getHostPath().getAbsolutePath()
@@ -183,8 +183,8 @@ public class WES {
 		String containerName = Utils.createContainerName();
 		String containerId = null;
 		Map<File,String> roVolumes = new HashMap<File,String>(additionalROVolumeMounts);
-		rwVolumes.put(hostTemplateFolder, workflowTemplateFolder.getAbsolutePath());
-		String workingDir = workflowTemplateFolder.getAbsolutePath();
+		rwVolumes.put(hostWorkflowFolder, workflowRunnerWorkflowFolder.getAbsolutePath());
+		String workingDir = workflowRunnerWorkflowFolder.getAbsolutePath();
 		try {
 			// normally would pull from quqy.io ("quay.io/ucsc_cgl/toil")
 			// this incorporates the Synapse client as well at Toil and Docker
