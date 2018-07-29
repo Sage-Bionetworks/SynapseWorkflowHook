@@ -2,10 +2,14 @@ package org.sagebionetworks;
 
 import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_DEFAULT;
 import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
+import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +17,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -216,4 +221,11 @@ public class Utils {
 			return null;			
 		}
 	}
+	
+	public static void writeSynapseConfigFile(OutputStream os) throws IOException {
+		String username=getProperty(SYNAPSE_USERNAME_PROPERTY);
+		String password=getProperty(SYNAPSE_PASSWORD_PROPERTY);;
+		IOUtils.write("[authentication]\nusername="+username+"\npassword="+password+"\n", os, Charset.forName("UTF-8"));
+	}
+
 }

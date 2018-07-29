@@ -2,7 +2,7 @@ version: '3'
 services:
   workflow-hook:
     image:
-      workflow-hook
+      sagebionetworks/synapseworkflowhook
     volumes:
     - ${WORKFLOW_TEMPDIR}:/tempDir:rw
     - ${DOCKER_CERT_PATH_HOST}:/certs:ro

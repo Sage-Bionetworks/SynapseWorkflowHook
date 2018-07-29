@@ -1,12 +1,10 @@
 package org.sagebionetworks;
 
-import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.MAX_LOG_ANNOTATION_CHARS;
 import static org.sagebionetworks.Constants.NOTIFICATION_PRINCIPAL_ID;
 import static org.sagebionetworks.Constants.ROOT_TEMPLATE_ANNOTATION_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
-import static org.sagebionetworks.Constants.*;
 import static org.sagebionetworks.DockerUtils.PROCESS_TERMINATED_ERROR_CODE;
 import static org.sagebionetworks.EvaluationUtils.ADMIN_ANNOTS_ARE_PRIVATE;
 import static org.sagebionetworks.EvaluationUtils.FAILURE_REASON;
@@ -31,8 +29,6 @@ import static org.sagebionetworks.MessageUtils.createLogsAvailableMessage;
 import static org.sagebionetworks.MessageUtils.createPipelineFailureMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowCompleteMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowFailedMessage;
-import static org.sagebionetworks.Utils.createTempFile;
-import static org.sagebionetworks.Utils.getHostMountedScratchDir;
 import static org.sagebionetworks.Utils.getProperty;
 import static org.sagebionetworks.WorkflowUpdateStatus.DONE;
 import static org.sagebionetworks.WorkflowUpdateStatus.ERROR_ENCOUNTERED_DURING_EXECUTION;
@@ -40,11 +36,8 @@ import static org.sagebionetworks.WorkflowUpdateStatus.IN_PROGRESS;
 import static org.sagebionetworks.WorkflowUpdateStatus.STOPPED_TIME_OUT;
 import static org.sagebionetworks.WorkflowUpdateStatus.STOPPED_UPON_REQUEST;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -132,21 +124,6 @@ public class WorkflowHook  {
 
 	}
 	
-	private static ContainerRelativeFile synapseConfigFile = null;
-	
-	private static ContainerRelativeFile getSynapseConfigFile() throws IOException {
-		if (synapseConfigFile==null) {
-			File tempFile = createTempFile(null, getHostMountedScratchDir());
-			String username=getProperty(SYNAPSE_USERNAME_PROPERTY);
-			String password=getProperty(SYNAPSE_PASSWORD_PROPERTY);;
-			try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-				IOUtils.write("[authentication]\nusername="+username+"\npassword="+password+"\n", fos, Charset.forName("UTF-8"));
-			}
-			synapseConfigFile = new ContainerRelativeFile(tempFile.getName(), getHostMountedScratchDir(), new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
-		}
-		return synapseConfigFile;
-	}
-
 	public static List<String> getEvaluationIds() throws JSONException {
 		return new ArrayList<String>(getTemplateSynapseIds().keySet());
 	}
@@ -240,8 +217,12 @@ public class WorkflowHook  {
 					Folder lockedFolder=archiver.getOrCreateSubmitterFolder(submittingUserOrTeamId, false);
 					WorkflowParameters workflowParameters = new WorkflowParameters(
 							sb.getSubmission().getId(), workflow.getSynapseId(), lockedFolder.getId(), sharedFolder.getId());
-					wes.addWorkflowEngineFile(getSynapseConfigFile(), new File(WORKFLOW_SYNAPSE_CONFIG_FOLDER), WORKFLOW_SYNAPSE_CONFIG_FILE_NAME);
-					WorkflowJob newJob = wes.createWorkflowJob(workflow.getWorkflowUrl(), workflow.getEntryPoint(), workflowParameters);
+					byte[] synapseConfigFileContent;
+					try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+						Utils.writeSynapseConfigFile(baos);
+						synapseConfigFileContent = baos.toByteArray();
+					}
+					WorkflowJob newJob = wes.createWorkflowJob(workflow.getWorkflowUrl(), workflow.getEntryPoint(), workflowParameters, synapseConfigFileContent);
 					workflowId = newJob.getWorkflowId();
 					EvaluationUtils.setAnnotation(submissionStatus, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
 				} catch (InvalidSubmissionException e) {

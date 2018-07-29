@@ -53,7 +53,7 @@ public class WES {
 		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); // needed for some https resources
 	}
 	
-	private Map<File,String> additionalROVolumeMounts = new HashMap<File,String>();
+//	private Map<File,String> additionalROVolumeMounts = new HashMap<File,String>();
 	
 	public WES(DockerUtils dockerUtils) {
 		this.dockerUtils=dockerUtils;
@@ -137,12 +137,12 @@ public class WES {
 		return new ContainerRelativeFile(workflowParameters.getName(), targetFolder.getContainerPath(), targetFolder.getHostPath());
 	}
 	
-	/*
-	 * Used for configuration files required by the workflow engine
-	 */
-	public void addWorkflowEngineFile(ContainerRelativeFile file, File workflowEngineFolder, String relativePath) {
-		additionalROVolumeMounts.put(file.getHostPath(), (new File(workflowEngineFolder, relativePath)).getAbsolutePath());
-	}
+//	/*
+//	 * Used for configuration files required by the workflow engine
+//	 */
+//	public void addWorkflowEngineFile(ContainerRelativeFile file, File workflowEngineFolder, String relativePath) {
+//		additionalROVolumeMounts.put(file.getHostPath(), (new File(workflowEngineFolder, relativePath)).getAbsolutePath());
+//	}
 
 	/**
 	 * This is analogous to POST /workflows in WES
@@ -153,7 +153,8 @@ public class WES {
 	 * @throws IOException
 	 * @throws InvalidSubmissionException
 	 */
-	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, WorkflowParameters workflowParameters) throws IOException, InvalidSubmissionException {
+	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, 
+			WorkflowParameters workflowParameters, byte[] synapseConfigFileContent) throws IOException, InvalidSubmissionException {
 		ContainerRelativeFile workflowFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
 		// Note that we create the param's file within the folder to which we've downloaded the workflow template
 		// This gives us a single folder to mount to the Toil container
@@ -165,6 +166,12 @@ public class WES {
 		// https://github.com/brucehoff/wiki/wiki/Problem-running-Toil-in-a-container
 		// For one thing, the path to the folder from the workflow's POV must be the SAME as from the host's POV.
 		File workflowRunnerWorkflowFolder = hostWorkflowFolder;
+		
+		// write the synapse config file into the workflow folder
+		// this is NOT secure but there's no good option today
+		try (FileOutputStream fos=new FileOutputStream(new File(workflowFolder.getContainerPath(), ".synapseConfig"))) {
+			IOUtils.write(synapseConfigFileContent, fos);
+		}
 		
 		// further, we must set 'workDir' and 'noLinkImports':
 		List<String> cmd = Arrays.asList(
@@ -182,7 +189,8 @@ public class WES {
 		
 		String containerName = Utils.createContainerName();
 		String containerId = null;
-		Map<File,String> roVolumes = new HashMap<File,String>(additionalROVolumeMounts);
+		Map<File,String> roVolumes = new HashMap<File,String>();
+
 		rwVolumes.put(hostWorkflowFolder, workflowRunnerWorkflowFolder.getAbsolutePath());
 		String workingDir = workflowRunnerWorkflowFolder.getAbsolutePath();
 		try {
