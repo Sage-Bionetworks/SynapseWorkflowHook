@@ -134,7 +134,7 @@ public class WES {
 			IOUtils.write("workflowSynapseId: "+params.getSynapseWorkflowReference()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("submitterUploadSynId: "+params.getSubmitterUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("adminUploadSynId: "+params.getAdminUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
-			IOUtils.write("synapseConfig: "+hostSynapseConfig.getAbsolutePath()+"\n", fos, Charset.forName("UTF-8"));
+			IOUtils.write("synapseConfig:\n  class: File\n  path: "+hostSynapseConfig.getAbsolutePath()+"\n", fos, Charset.forName("UTF-8"));
 		}
 		return new ContainerRelativeFile(workflowParameters.getName(), targetFolder.getContainerPath(), targetFolder.getHostPath());
 	}
