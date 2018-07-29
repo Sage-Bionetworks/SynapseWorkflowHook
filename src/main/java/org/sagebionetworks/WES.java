@@ -126,13 +126,15 @@ public class WES {
 		return workflowTemplateFolder;
 	}
 	
-	private ContainerRelativeFile createWorkflowParametersYamlFile(WorkflowParameters params, ContainerRelativeFile targetFolder) throws IOException {
+	private ContainerRelativeFile createWorkflowParametersYamlFile(WorkflowParameters params, ContainerRelativeFile targetFolder,
+			File hostSynapseConfig) throws IOException {
 		File workflowParameters = createTempFile(".yml", targetFolder.getContainerPath());
 		try (FileOutputStream fos = new FileOutputStream(workflowParameters)) {
 			IOUtils.write("submissionId: "+params.getSubmissionId()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("workflowSynapseId: "+params.getSynapseWorkflowReference()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("submitterUploadSynId: "+params.getSubmitterUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("adminUploadSynId: "+params.getAdminUploadSynId()+"\n", fos, Charset.forName("UTF-8"));
+			IOUtils.write("synapseConfig: "+hostSynapseConfig.getAbsolutePath()+"\n", fos, Charset.forName("UTF-8"));
 		}
 		return new ContainerRelativeFile(workflowParameters.getName(), targetFolder.getContainerPath(), targetFolder.getHostPath());
 	}
@@ -156,9 +158,6 @@ public class WES {
 	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, 
 			WorkflowParameters workflowParameters, byte[] synapseConfigFileContent) throws IOException, InvalidSubmissionException {
 		ContainerRelativeFile workflowFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
-		// Note that we create the param's file within the folder to which we've downloaded the workflow template
-		// This gives us a single folder to mount to the Toil container
-		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, workflowFolder);
 		
 		// The folder with the workflow and param's, from the POV of the host
 		File hostWorkflowFolder = workflowFolder.getHostPath();
@@ -173,6 +172,11 @@ public class WES {
 			IOUtils.write(synapseConfigFileContent, fos);
 		}
 		
+		// Note that we create the param's file within the folder to which we've downloaded the workflow template
+		// This gives us a single folder to mount to the Toil container
+		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, workflowFolder, 
+				new File(workflowFolder.getHostPath(), ".synapseConfig")); // TODO define string
+
 		// further, we must set 'workDir' and 'noLinkImports':
 		List<String> cmd = Arrays.asList(
 				"toil-cwl-runner", 
