@@ -19,20 +19,6 @@ Links one or more Synapse Evaluation queues to a workflow engine.  Each Evaluati
 	- failure reason (if workflow job failed to complete)
 	- progress (0->100%), if provided by the Workflow engine
 	
-### Parameters (environment or properties; may put in .env file to use with Docker Compose):
-- `DOCKER_ENGINE_URL` - address of the Docker engine.   Along with `DOCKER_CERT_PATH_HOST` this is needed since the Workflow Hook will manage containers
-- `DOCKER_CERT_PATH_HOST` - credentials file allowing access to Docker engine
-- `SYNAPSE_USERNAME` - Synapse credentials under which the Workflow Hook will run.  Must have access to evaluation queue(s) being serviced
-- `SYNAPSE_PASSWORD` - password for `SYNAPSE_USERNAME`
-- `WORKFLOW_TEMPDIR` - scratch folder on the host, mounted as /tempDir to the container running the WorkflowHook
-- `WORKFLOW_OUTPUT_ROOT_ENTITY_ID` - root (Project or Folder) for uploaded doc's, like log files.  Hierarchy is root/submitterId/submissionId/files
-- `EVALUATION_TEMPLATES` - json mapping evaluation IDs to URL for workflow template archive
-- `NOTIFICATION_PRINCIPAL_ID` - (optional) Synapse ID of user or team to be notified of system issues.  If omitted then notification are sent to the Synapse account under which the workflow pipeline is run
-- `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.  If false then a separate process must 'unlock' files.  This is useful when workflows run on sensitive data and administration needs to control the volume of results returned to the workflow submitter
-- `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` - (optional) Synapse ID of user authorized to share (unlock) workflow output files 
-	(only required if `SHARE_RESULTS_IMMEDIATELY` is false)
-
-
 ### To use:
 
 #### Create a project, submission queue, workflow template and dashboard
@@ -57,18 +43,22 @@ Will print out created Project ID and the value for the `EVALUATION_TEMPLATES` i
 
 #### Start the workflow service
 
-Create a .env file having the following environment variables:
-
-- `DOCKER_ENGINE_URL`: address of the Docker engine, as defined above
-- `DOCKER_CERT_PATH_HOST`: path to the Docker engine certificate, as defined above
-- `WORKFLOW_TEMPDIR`: path to a scratch directory on the host machine
-- `SYNAPSE_USERNAME`: Synapse credentials under which the Workflow Hook will run, as defined above
-- `SYNAPSE_PASSWORD`: password for SYNAPSE_USERNAME
-- `WORKFLOW_OUTPUT_ROOT_ENTITY_ID`: the ID of the project generated in the set-up step, above
-- `EVALUATION_TEMPLATES`: the JSON object returned by the set up step
-- `NOTIFICATION_PRINCIPAL_ID` - (optional) Synapse ID of user or team to be notified of system issues. 
-- `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.
+Set the following as environment variables or properties.  To use with Docker Compose you may place them in and .env file:
+- `DOCKER_ENGINE_URL` - address of the Docker engine.   Along with `DOCKER_CERT_PATH_HOST` this is needed since the Workflow Hook will manage containers
+- `DOCKER_CERT_PATH_HOST` - path to credentials file allowing access to Docker engine
+- `WORKFLOW_TEMPDIR` - path to ascratch folder on the host machine, mounted as /tempDir to the container running the WorkflowHook
+- `SYNAPSE_USERNAME` - Synapse credentials under which the Workflow Hook will run.  Must have access to evaluation queue(s) being serviced
+- `SYNAPSE_PASSWORD` - password for `SYNAPSE_USERNAME`
+- `WORKFLOW_OUTPUT_ROOT_ENTITY_ID` - root (Project or Folder) for uploaded doc's, like log files.  Hierarchy is root/submitterId/submissionId/files. May be the ID of the project generated in the set-up step, above.
+- `EVALUATION_TEMPLATES` - JSON mapping evaluation IDs to URL for workflow template archive.  Returned by the set up step, above.
+- `TOIL_CLI_OPTIONS` - (optional) Space separated list of options.  See https://toil.readthedocs.io/en/3.15.0/running/cliOptions.html.  Example:
+```
+TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
+```
+- `NOTIFICATION_PRINCIPAL_ID` - (optional) Synapse ID of user or team to be notified of system issues.  If omitted then notification are sent to the Synapse account under which the workflow pipeline is run.
+- `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.  If false then a separate process must 'unlock' files.  This is useful when workflows run on sensitive data and administration needs to control the volume of results returned to the workflow submitter.
 - `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` - (optional) Synapse ID of user authorized to share (unlock) workflow output files 
+	(only required if `SHARE_RESULTS_IMMEDIATELY` is false).
 
 Now run:
 

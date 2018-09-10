@@ -3,6 +3,7 @@ package org.sagebionetworks;
 import static org.sagebionetworks.Constants.DUMP_PROGRESS_SHELL_COMMAND;
 import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
+import static org.sagebionetworks.Constants.TOIL_CLI_OPTIONS_PROPERTY_NAME;
 import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
 import static org.sagebionetworks.Utils.createTempFile;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.fuin.utils4j.Utils4J;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -52,9 +54,7 @@ public class WES {
 	static {
 		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); // needed for some https resources
 	}
-	
-//	private Map<File,String> additionalROVolumeMounts = new HashMap<File,String>();
-	
+		
 	public WES(DockerUtils dockerUtils) {
 		this.dockerUtils=dockerUtils;
 	}
@@ -138,14 +138,12 @@ public class WES {
 		}
 		return new ContainerRelativeFile(workflowParameters.getName(), targetFolder.getContainerPath(), targetFolder.getHostPath());
 	}
-	
-//	/*
-//	 * Used for configuration files required by the workflow engine
-//	 */
-//	public void addWorkflowEngineFile(ContainerRelativeFile file, File workflowEngineFolder, String relativePath) {
-//		additionalROVolumeMounts.put(file.getHostPath(), (new File(workflowEngineFolder, relativePath)).getAbsolutePath());
-//	}
 
+	private static final String[] DISALLOWED_USER_TOIL_PARAMS = {
+			"LinkImports", // we apply noLinkImports.  User must use neither LinkImports nor noLinkImports
+			"workDir" // we specify workDir.  User must not
+	};
+	
 	/**
 	 * This is analogous to POST /workflows in WES
 	 * @param workflowUrl the URL to the archive of workflow files
@@ -176,15 +174,21 @@ public class WES {
 		// This gives us a single folder to mount to the Toil container
 		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, workflowFolder, 
 				new File(workflowFolder.getHostPath(), ".synapseConfig")); // TODO define string
+		
+		String userToilParams = getProperty(TOIL_CLI_OPTIONS_PROPERTY_NAME);
+		if (StringUtils.isEmpty(userToilParams)) userToilParams="";
+		for (String disallowed : DISALLOWED_USER_TOIL_PARAMS) {
+			if (userToilParams.toLowerCase().contains(disallowed.toLowerCase())) {
+				throw new IllegalArgumentException("may not specify "+disallowed+" in Toil CLI options.");
+			}
+		}
 
 		// further, we must set 'workDir' and 'noLinkImports':
 		List<String> cmd = Arrays.asList(
 				"toil-cwl-runner", 
-				"--defaultMemory",  "100M", 
-				"--retryCount",  "0", 
-				"--defaultDisk", "1000000",
-				"--workDir",  workflowRunnerWorkflowFolder.getAbsolutePath(), 
+				userToilParams,
 				"--noLinkImports",
+				"--workDir",  workflowRunnerWorkflowFolder.getAbsolutePath(), 
 				entrypoint,
 				workflowParametersFile.getHostPath().getAbsolutePath()
 				);
