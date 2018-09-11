@@ -52,7 +52,7 @@ or
 ```
 DOCKER_ENGINE_URL=tcp://192.168.0.1:2376
 ```
-- `DOCKER_CERT_PATH_HOST` - path to credentials file allowing access to Docker engine
+- `DOCKER_CERT_PATH_HOST` - path to credentials file allowing access to Docker engine.  Example:
 ```
 DOCKER_CERT_PATH_HOST=/my/home/dir/.docker/machine/certs
 ```
