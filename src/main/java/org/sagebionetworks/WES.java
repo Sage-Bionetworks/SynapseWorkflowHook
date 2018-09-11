@@ -205,7 +205,7 @@ public class WES {
 			// normally would pull from quqy.io ("quay.io/ucsc_cgl/toil")
 			// this incorporates the Synapse client as well at Toil and Docker
 			containerId = dockerUtils.createModelContainer(
-					"docker.synapse.org/syn5644795/docker-and-toil",
+					"sagebionetworks/synapseworkflowhook-toil",
 					containerName, 
 					roVolumes, 
 					rwVolumes, 
