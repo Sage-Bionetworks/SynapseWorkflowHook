@@ -44,13 +44,26 @@ Will print out created Project ID and the value for the `EVALUATION_TEMPLATES` i
 #### Start the workflow service
 
 Set the following as environment variables or properties.  To use with Docker Compose you may place them in and .env file:
-- `DOCKER_ENGINE_URL` - address of the Docker engine.   Along with `DOCKER_CERT_PATH_HOST` this is needed since the Workflow Hook will manage containers
+- `DOCKER_ENGINE_URL` - address of the Docker engine.   Along with `DOCKER_CERT_PATH_HOST` this is needed since the Workflow Hook will manage containers.  Examples:
+```
+DOCKER_ENGINE_URL=unix:///var/run/docker.sock
+```
+or
+```
+DOCKER_ENGINE_URL=tcp://192.168.0.1:2376
+```
 - `DOCKER_CERT_PATH_HOST` - path to credentials file allowing access to Docker engine
-- `WORKFLOW_TEMPDIR` - path to ascratch folder on the host machine, mounted as /tempDir to the container running the WorkflowHook
+```
+DOCKER_CERT_PATH_HOST=/my/home/dir/.docker/machine/certs
+```
+- `WORKFLOW_TEMPDIR` - path to a scratch folder on the host machine, mounted as /tempDir to the container running the WorkflowHook
 - `SYNAPSE_USERNAME` - Synapse credentials under which the Workflow Hook will run.  Must have access to evaluation queue(s) being serviced
 - `SYNAPSE_PASSWORD` - password for `SYNAPSE_USERNAME`
 - `WORKFLOW_OUTPUT_ROOT_ENTITY_ID` - root (Project or Folder) for uploaded doc's, like log files.  Hierarchy is root/submitterId/submissionId/files. May be the ID of the project generated in the set-up step, above.
-- `EVALUATION_TEMPLATES` - JSON mapping evaluation IDs to URL for workflow template archive.  Returned by the set up step, above.
+- `EVALUATION_TEMPLATES` - JSON mapping evaluation ID(s) to URL(s) for workflow template archive.  Returned by the set up step, above.  Example:
+```
+{"9614045":"syn16799953"}
+```
 - `TOIL_CLI_OPTIONS` - (optional) Space separated list of options.  See https://toil.readthedocs.io/en/3.15.0/running/cliOptions.html.  Example:
 ```
 TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
