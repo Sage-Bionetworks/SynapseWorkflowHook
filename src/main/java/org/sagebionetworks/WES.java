@@ -175,7 +175,7 @@ public class WES {
 		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, workflowFolder, 
 				new File(workflowFolder.getHostPath(), ".synapseConfig")); // TODO define string
 		
-		String userToilParams = getProperty(TOIL_CLI_OPTIONS_PROPERTY_NAME);
+		String userToilParams = getProperty(TOIL_CLI_OPTIONS_PROPERTY_NAME, false);
 		if (StringUtils.isEmpty(userToilParams)) userToilParams="";
 		for (String disallowed : DISALLOWED_USER_TOIL_PARAMS) {
 			if (userToilParams.toLowerCase().contains(disallowed.toLowerCase())) {
