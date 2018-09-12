@@ -27,10 +27,11 @@ RUN apt-get update
 RUN apt-get install -y docker-ce
 
 #install nodejs, to provide in line javascript evaluation
-RUN apt-get install -y nodejs npm
+# RUN apt-get install -y nodejs npm
+RUN curl -sL https://deb.nodesource.com/setup_6.x | sudo bash -
+RUN apt-get install -y nodejs
+RUN apt-get install -y npm
 
 RUN npm install js-yaml
 
 WORKDIR /workdir
-
-
