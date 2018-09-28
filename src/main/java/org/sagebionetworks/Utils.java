@@ -18,6 +18,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -92,15 +93,24 @@ public class Utils {
 		if (agentTempDir==null) agentTempDir = AGENT_TEMP_DIR_DEFAULT;
 		return new File(agentTempDir);
 	}
+	private static boolean missing(String s) {
+		return StringUtils.isEmpty(s) || "null".equals(s);
+	}
 
 	public static String getProperty(String key, boolean required) {
 		initProperties();
-		String environmentVariable = System.getenv(key);
-		if (environmentVariable!=null) return environmentVariable;
-		String commandlineOption = System.getProperty(key);
-		if (commandlineOption!=null) return commandlineOption;
-		String embeddedProperty = properties.getProperty(key);
-		if (embeddedProperty!=null) return embeddedProperty;
+		{
+			String embeddedProperty = properties.getProperty(key);
+			if (!missing(embeddedProperty)) return embeddedProperty;
+		}
+		{
+			String environmentVariable = System.getenv(key);
+			if (!missing(environmentVariable)) return environmentVariable;
+		}
+		{
+			String commandlineOption = System.getProperty(key);
+			if (!missing(commandlineOption)) return commandlineOption;
+		}
 		if (required) throw new RuntimeException("Cannot find value for "+key);
 		return null;
 	}
