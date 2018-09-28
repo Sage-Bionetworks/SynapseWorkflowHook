@@ -100,16 +100,16 @@ public class Utils {
 	public static String getProperty(String key, boolean required) {
 		initProperties();
 		{
-			String embeddedProperty = properties.getProperty(key);
-			if (!missing(embeddedProperty)) return embeddedProperty;
+			String commandlineOption = System.getProperty(key);
+			if (!missing(commandlineOption)) return commandlineOption;
 		}
 		{
 			String environmentVariable = System.getenv(key);
 			if (!missing(environmentVariable)) return environmentVariable;
 		}
 		{
-			String commandlineOption = System.getProperty(key);
-			if (!missing(commandlineOption)) return commandlineOption;
+			String embeddedProperty = properties.getProperty(key);
+			if (!missing(embeddedProperty)) return embeddedProperty;
 		}
 		if (required) throw new RuntimeException("Cannot find value for "+key);
 		return null;
