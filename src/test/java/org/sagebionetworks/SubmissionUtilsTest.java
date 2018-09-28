@@ -2,7 +2,7 @@ package org.sagebionetworks;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.SubmissionUtils.getRepoSuffixFromImage;
 import static org.sagebionetworks.SubmissionUtils.getSynapseProjectIdForDockerImage;
@@ -24,6 +24,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.sagebionetworks.client.SynapseClient;
 import org.sagebionetworks.client.exceptions.SynapseForbiddenException;
 import org.sagebionetworks.evaluation.model.Submission;
+import org.sagebionetworks.evaluation.model.SubmissionStatus;
 import org.sagebionetworks.reflection.model.PaginatedResults;
 import org.sagebionetworks.repo.model.ACCESS_TYPE;
 import org.sagebionetworks.repo.model.AccessControlList;
@@ -149,6 +150,7 @@ public class SubmissionUtilsTest {
 
 	private static final String ENTITY_ID="syn123";
 	private static final String USER_ID = "45678";
+	private static final String SUBMISSION_ID = "987654";
 
 	// this is the case where a user is granted READ access explicitly to the entity
 	@Test
@@ -208,8 +210,18 @@ public class SubmissionUtilsTest {
 	}
 	
 	@Test
-	public void testSUBMISSION_STATUS_UPDATE_RUNNER() throws Exception {
-		fail("TODO");
+	public void testUpdateSubmissionStatus() throws Exception {
+		SubmissionUtils submissionUtils = new SubmissionUtils(synapse);
+		
+		SubmissionStatus submissionStatus = new SubmissionStatus();
+		when(synapse.getSubmissionStatus(SUBMISSION_ID)).thenReturn(submissionStatus);
+		
+		when (synapse.updateSubmissionStatus(any(SubmissionStatus.class))).thenReturn(submissionStatus);
+
+		SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
+		
+		// method under test
+		submissionUtils.updateSubmissionStatus(submissionStatus, statusMods);
 	}
 
 }
