@@ -72,7 +72,7 @@ public class SubmissionUtils {
 	static {
 		List<Class<? extends SynapseServerException>> noRetryExceptions = new ArrayList<Class<? extends SynapseServerException>>(NO_RETRY_EXCEPTIONS);
 		// this is the one exception we DO want to retry on!
-		noRetryExceptions.remove(SynapseConflictingUpdateException.class);
+		boolean foundit = noRetryExceptions.remove(SynapseConflictingUpdateException.class);
 		// these are being retried on the lower level so we do NOT want to retry on them here too
 		noRetryExceptions.add(SynapseServiceUnavailable.class);
 		noRetryExceptions.add(SynapseTooManyRequestsException.class);
@@ -82,12 +82,12 @@ public class SubmissionUtils {
 		SUBMISSION_STATUS_UPDATE_RUNNER = new ExponentialBackoffRunner(noRetryExceptions, NO_RETRY_STATUSES, DEFAULT_NUM_RETRY_ATTEMPTS);
 	}
 	
-	public SubmissionStatus updateSubmissionStatus(final SubmissionStatus submissionStatus, final SubmissionStatusModifications statusMods) throws SynapseException {
+	public SubmissionStatus updateSubmissionStatus(SubmissionStatus submissionStatus, SubmissionStatusModifications statusMods) throws SynapseException {
 		try {
 			return SUBMISSION_STATUS_UPDATE_RUNNER.execute(new Executable<SubmissionStatus,SubmissionStatus>(){
 				public SubmissionStatus execute(SubmissionStatus status) throws SynapseException {
-					applyModifications(submissionStatus, statusMods);
-					return synapse.updateSubmissionStatus(submissionStatus);
+					applyModifications(status, statusMods);
+					return synapse.updateSubmissionStatus(status);
 				}
 				public SubmissionStatus refreshArgs(SubmissionStatus status) throws SynapseException {
 					return synapse.getSubmissionStatus(status.getId());

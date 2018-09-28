@@ -2,7 +2,11 @@ package org.sagebionetworks;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.SubmissionUtils.getRepoSuffixFromImage;
 import static org.sagebionetworks.SubmissionUtils.getSynapseProjectIdForDockerImage;
@@ -17,11 +21,14 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.sagebionetworks.client.SynapseClient;
+import org.sagebionetworks.client.exceptions.SynapseConflictingUpdateException;
 import org.sagebionetworks.client.exceptions.SynapseForbiddenException;
 import org.sagebionetworks.evaluation.model.Submission;
 import org.sagebionetworks.evaluation.model.SubmissionStatus;
@@ -46,7 +53,6 @@ public class SubmissionUtilsTest {
 
 	@Mock
 	SynapseClient synapse;
-
 
 	@After 
 	public void tearDown() throws Exception {
@@ -210,18 +216,68 @@ public class SubmissionUtilsTest {
 	}
 	
 	@Test
-	public void testUpdateSubmissionStatus() throws Exception {
+	public void testUpdateSubmissionStatusHappyCase() throws Exception {
 		SubmissionUtils submissionUtils = new SubmissionUtils(synapse);
 		
-		SubmissionStatus submissionStatus = new SubmissionStatus();
-		when(synapse.getSubmissionStatus(SUBMISSION_ID)).thenReturn(submissionStatus);
-		
-		when (synapse.updateSubmissionStatus(any(SubmissionStatus.class))).thenReturn(submissionStatus);
+		SubmissionStatus submissionStatusPreviouslyRetrieved = new SubmissionStatus();
+		submissionStatusPreviouslyRetrieved.setId(SUBMISSION_ID);
+		submissionStatusPreviouslyRetrieved.setEtag("1");
 
 		SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
+		statusMods.setCanCancel(false);
 		
 		// method under test
-		submissionUtils.updateSubmissionStatus(submissionStatus, statusMods);
+		submissionUtils.updateSubmissionStatus(submissionStatusPreviouslyRetrieved, statusMods);
+		
+		// one update
+		ArgumentCaptor<SubmissionStatus> updateStatusCaptor = ArgumentCaptor.forClass(SubmissionStatus.class);
+		verify(synapse).updateSubmissionStatus(updateStatusCaptor.capture());
+		
+		// expect that this is sent to the back end
+		SubmissionStatus expected = new SubmissionStatus();
+		expected.setId(SUBMISSION_ID);
+		expected.setCanCancel(false);
+		expected.setEtag("1");
+		assertEquals(expected, updateStatusCaptor.getValue());
+		
+		// no need to refresh
+		verify(synapse, never()).getSubmissionStatus(SUBMISSION_ID);
+	}
+
+	@Test
+	public void testUpdateSubmissionApplyUpdates() throws Exception {
+		SubmissionUtils submissionUtils = new SubmissionUtils(synapse);
+		
+		SubmissionStatus submissionStatusPreviouslyRetrieved = new SubmissionStatus();
+		submissionStatusPreviouslyRetrieved.setId(SUBMISSION_ID);
+		submissionStatusPreviouslyRetrieved.setEtag("1");
+		SubmissionStatus submissionStatusFromBackend = new SubmissionStatus();
+		submissionStatusFromBackend.setId(SUBMISSION_ID);
+		submissionStatusFromBackend.setEtag("2");
+		
+		when(synapse.updateSubmissionStatus(eq(submissionStatusPreviouslyRetrieved))).thenThrow(SynapseConflictingUpdateException.class);
+		
+		when(synapse.getSubmissionStatus(SUBMISSION_ID)).thenReturn(submissionStatusFromBackend);
+
+		SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
+		statusMods.setCanCancel(false);
+		
+		// method under test
+		submissionUtils.updateSubmissionStatus(submissionStatusPreviouslyRetrieved, statusMods);
+		
+		// one update
+		ArgumentCaptor<SubmissionStatus> updateStatusCaptor = ArgumentCaptor.forClass(SubmissionStatus.class);
+		verify(synapse, times(2)).updateSubmissionStatus(updateStatusCaptor.capture());
+		
+		// expect that this is sent to the back end
+		SubmissionStatus expected = new SubmissionStatus();
+		expected.setId(SUBMISSION_ID);
+		expected.setCanCancel(false);
+		expected.setEtag("2");
+		assertEquals(expected, updateStatusCaptor.getValue());
+		
+		// no need to refresh
+		verify(synapse).getSubmissionStatus(SUBMISSION_ID);
 	}
 
 }

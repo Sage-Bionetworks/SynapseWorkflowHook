@@ -74,8 +74,7 @@ public class Constants {
 			SynapseDeprecatedServiceException.class,
 			SynapseForbiddenException.class, 
 			SynapseTermsOfUseException.class,
-			SynapseUnauthorizedException.class,
-			SynapseConflictingUpdateException.class
+			SynapseUnauthorizedException.class
 			); 
 	
 	public static final Integer[] NO_RETRY_STATUSES = new Integer[] {409};
