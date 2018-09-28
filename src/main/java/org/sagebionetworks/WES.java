@@ -116,7 +116,7 @@ public class WES {
 				String descriptorContent = downloadWebDocument(descriptorUrl);
 				JSONObject descriptor = new JSONObject(descriptorContent);
 				try (OutputStream os = new FileOutputStream(new File(workflowTemplateFolder.getContainerPath(), filePath))) {
-					IOUtils.write(descriptor.getString("descriptor"), os, Charset.forName("utf-8"));
+					IOUtils.write(descriptor.getString("content"), os, Charset.forName("utf-8"));
 				}
 			}
 			
