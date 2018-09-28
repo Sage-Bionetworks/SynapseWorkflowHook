@@ -28,20 +28,22 @@ public class SynapseClientFactory {
 
 		return SynapseProfileProxy.createProfileProxy(scIntern);
 	}
-
-	public static SynapseClient createSynapseClient() {
-		final SynapseClient synapseClientIntern = createSynapseClientIntern();
-
+	
+	public static <T,V> V foo(T bar) {
+		return null;
+	}
+	
+	public static <T extends V,V> V createRetryingProxy(final T underlying, final Class<V> implementedInterface) {
 		final ExponentialBackoffRunner exponentialBackoffRunner = new ExponentialBackoffRunner(
 				NO_RETRY_EXCEPTIONS, NO_RETRY_STATUSES, DEFAULT_NUM_RETRY_ATTEMPTS);
 
 		InvocationHandler handler = new InvocationHandler() {
-			public Object invoke(final Object proxy, final Method method, final Object[] args)
+			public Object invoke(final Object proxy, final Method method, final Object[] outerArgs)
 					throws Throwable {
-				return exponentialBackoffRunner.execute(new Executable<Object,Object>() {
-					public Object execute(Object args) throws Throwable {
+				return exponentialBackoffRunner.execute(new Executable<Object,Object[]>() {
+					public Object execute(Object[] args) throws Throwable {
 						try {
-							Object result = method.invoke(synapseClientIntern, args);
+							Object result = method.invoke(underlying, args);
 							return result;
 						} catch (IllegalAccessException  e) {
 							throw new RuntimeException(e);
@@ -49,16 +51,21 @@ public class SynapseClientFactory {
 							if (e.getCause()==null) throw e; else throw e.getCause();
 						}
 					}
-					public Object refreshArgs(Object args) {
+					public Object[] refreshArgs(Object[] args) {
 						return args; // NO-OP
 					}
-				}, args);
+				}, outerArgs);
 			}
 		};
 
-		return (SynapseClient) Proxy.newProxyInstance(SynapseClient.class.getClassLoader(),
-				new Class[] { SynapseClient.class },
+		return (V) Proxy.newProxyInstance(SynapseClientFactory.class.getClassLoader(),
+				new Class[] {implementedInterface },
 				handler);
+	}
+
+	public static SynapseClient createSynapseClient() {
+		final SynapseClient synapseClientIntern = createSynapseClientIntern();
+		return createRetryingProxy(synapseClientIntern, SynapseClient.class);
 	}
 
 }
