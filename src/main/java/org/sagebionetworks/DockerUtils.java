@@ -367,16 +367,16 @@ public class DockerUtils {
 
 	public void stopContainerWithRetry(String containerId) {
 		try {
-			STOP_CONTAINER_BACKOFF_RUNNER.execute(new Executable<Void> () {
+			STOP_CONTAINER_BACKOFF_RUNNER.execute(new NoRefreshExecutableAdapter<Void,Void> () {
 				@Override
-				public Void execute() throws Throwable {
+				public Void execute(Void args) throws Throwable {
 					dockerClient.stopContainerCmd(containerId).withTimeout(60).exec();
 					InspectContainerResponse inspectContainerResponse = dockerClient
 							.inspectContainerCmd(containerId).exec();
 					if (inspectContainerResponse.getState().getRunning())
 						throw new RuntimeException("Failed to stop container.");
 					return null;
-				}});
+				}}, null);
 		} catch (Throwable e) {
 			if (e instanceof RuntimeException) {
 				throw (RuntimeException)e;

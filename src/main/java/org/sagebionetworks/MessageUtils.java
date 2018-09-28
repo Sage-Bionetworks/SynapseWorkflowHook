@@ -177,12 +177,12 @@ public class MessageUtils {
 		messageMetadata.setRecipients(Collections.singleton(userId));
 		messageMetadata.setSubject(subject);
 		try {
-			(new ExponentialBackoffRunner()).execute(new Executable<Void>() {
+			(new ExponentialBackoffRunner()).execute(new NoRefreshExecutableAdapter<Void,Void>() {
 				@Override
-				public Void execute() throws Throwable {
+				public Void execute(Void args) throws Throwable {
 					synapse.sendStringMessage(messageMetadata, body);
 					return null;
-				}});
+				}}, null);
 		} catch (Throwable t) {
 			throw new RuntimeException(t);
 		}

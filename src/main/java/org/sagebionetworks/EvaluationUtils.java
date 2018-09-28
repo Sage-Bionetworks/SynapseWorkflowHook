@@ -1,5 +1,8 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.EXECUTION_STAGE_PROPERTY_NAME;
+import static org.sagebionetworks.Utils.getProperty;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,21 +13,17 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
 import org.sagebionetworks.client.SynapseClient;
-import org.sagebionetworks.client.exceptions.SynapseConflictingUpdateException;
 import org.sagebionetworks.client.exceptions.SynapseException;
-import org.sagebionetworks.evaluation.model.BatchUploadResponse;
 import org.sagebionetworks.evaluation.model.SubmissionBundle;
 import org.sagebionetworks.evaluation.model.SubmissionStatus;
-import org.sagebionetworks.evaluation.model.SubmissionStatusBatch;
 import org.sagebionetworks.evaluation.model.SubmissionStatusEnum;
 import org.sagebionetworks.reflection.model.PaginatedResults;
+import org.sagebionetworks.repo.model.annotation.AnnotationBase;
 import org.sagebionetworks.repo.model.annotation.Annotations;
 import org.sagebionetworks.repo.model.annotation.DoubleAnnotation;
 import org.sagebionetworks.repo.model.annotation.LongAnnotation;
 import org.sagebionetworks.repo.model.annotation.StringAnnotation;
 import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
-import static org.sagebionetworks.Constants.*;
-import static org.sagebionetworks.Utils.*;
 
 public class EvaluationUtils {
 	private static final int PAGE_SIZE = 10;
@@ -141,7 +140,7 @@ public class EvaluationUtils {
 		return false;
 	}
 
-	public static void setAnnotation(SubmissionStatus status, String key, String value, boolean isPrivate) {
+	private static void setAnnotation(SubmissionStatus status, String key, String value, boolean isPrivate) {
 		if (value!=null && value.length()>499) value = value.substring(0, 499);
 		Annotations annotations = status.getAnnotations();
 		if (annotations==null) {
@@ -172,7 +171,7 @@ public class EvaluationUtils {
 		}
 	}
 
-	public static void setAnnotation(SubmissionStatus status, String key, long value, boolean isPrivate) {
+	private static void setAnnotation(SubmissionStatus status, String key, long value, boolean isPrivate) {
 		Annotations annotations = status.getAnnotations();
 		if (annotations==null) {
 			annotations=new Annotations();
@@ -202,7 +201,7 @@ public class EvaluationUtils {
 		}
 	}
 
-	public static void setAnnotation(SubmissionStatus status, String key, double value, boolean isPrivate) {
+	private static void setAnnotation(SubmissionStatus status, String key, double value, boolean isPrivate) {
 		Annotations annotations = status.getAnnotations();
 		if (annotations==null) {
 			annotations=new Annotations();
@@ -232,51 +231,51 @@ public class EvaluationUtils {
 		}
 	}
 
-	public static void setStatus(SubmissionStatus ss, SubmissionStatusEnum status, WorkflowUpdateStatus containerStatus) {
-		ss.setStatus(status);
+	public static void setStatus(SubmissionStatusModifications statusMods, SubmissionStatusEnum status, WorkflowUpdateStatus containerStatus) {
+		statusMods.setStatus(status);
 		switch(status) {
 		case EVALUATION_IN_PROGRESS:
-			setAnnotation(ss, STATUS_DESCRIPTION, STATUS_EVAL_IN_PROGRESS_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
-			ss.setCanCancel(true);
+			setAnnotation(statusMods, STATUS_DESCRIPTION, STATUS_EVAL_IN_PROGRESS_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
+			statusMods.setCanCancel(true);
 			break;
 		case ACCEPTED:
-			setAnnotation(ss, STATUS_DESCRIPTION, STATUS_ACCEPTED_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
-			ss.setCanCancel(false);
+			setAnnotation(statusMods, STATUS_DESCRIPTION, STATUS_ACCEPTED_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
+			statusMods.setCanCancel(false);
 			break;
 		case CLOSED:
 			if (containerStatus==null) {
-				setAnnotation(ss, STATUS_DESCRIPTION, status.name(), PUBLIC_ANNOTATION_SETTING);
+				setAnnotation(statusMods, STATUS_DESCRIPTION, status.name(), PUBLIC_ANNOTATION_SETTING);
 			} else {
 				switch (containerStatus) {
 				case DOCKER_PULL_FAILED:
-					setAnnotation(ss, STATUS_DESCRIPTION, DOCKER_PULL_FAILED_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
+					setAnnotation(statusMods, STATUS_DESCRIPTION, DOCKER_PULL_FAILED_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
 					break;
 				case ERROR_ENCOUNTERED_DURING_EXECUTION:
-					setAnnotation(ss, STATUS_DESCRIPTION, ERROR_DURING_EXECUTION_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
+					setAnnotation(statusMods, STATUS_DESCRIPTION, ERROR_DURING_EXECUTION_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
 					break;
 				case STOPPED_UPON_REQUEST:
-					setAnnotation(ss, STATUS_DESCRIPTION, STOPPED_UPON_REQUEST_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
+					setAnnotation(statusMods, STATUS_DESCRIPTION, STOPPED_UPON_REQUEST_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
 					break;
 				case STOPPED_TIME_OUT:
-					setAnnotation(ss, STATUS_DESCRIPTION, STOPPED_TIME_OUT_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
+					setAnnotation(statusMods, STATUS_DESCRIPTION, STOPPED_TIME_OUT_ANNOTATION_VALUE, PUBLIC_ANNOTATION_SETTING);
 					break;
 				default:
-					setAnnotation(ss, STATUS_DESCRIPTION, containerStatus.name(), PUBLIC_ANNOTATION_SETTING);
+					setAnnotation(statusMods, STATUS_DESCRIPTION, containerStatus.name(), PUBLIC_ANNOTATION_SETTING);
 				}
 			}
-			ss.setCanCancel(false);
+			statusMods.setCanCancel(false);
 			break;
 		default:
 			if (containerStatus==null) {
-				setAnnotation(ss, STATUS_DESCRIPTION, status.name(), PUBLIC_ANNOTATION_SETTING);
+				setAnnotation(statusMods, STATUS_DESCRIPTION, status.name(), PUBLIC_ANNOTATION_SETTING);
 			} else {
-				setAnnotation(ss, STATUS_DESCRIPTION, containerStatus.name(), PUBLIC_ANNOTATION_SETTING);      			
+				setAnnotation(statusMods, STATUS_DESCRIPTION, containerStatus.name(), PUBLIC_ANNOTATION_SETTING);      			
 			}
-			ss.setCanCancel(false);    		
+			statusMods.setCanCancel(false);    		
 		}
 	}
-
-	public static void removeAnnotation(SubmissionStatus status, String key) {
+	
+	private static void removeAnnotation(SubmissionStatus status, String key) {
 		Annotations annotations = status.getAnnotations();
 		if (annotations==null) return;
 
@@ -310,7 +309,65 @@ public class EvaluationUtils {
 			}
 		}
 	}
+	
+	private static void removeAnnotationIntern(SubmissionStatusModifications statusMods, String key) {
+		for (Iterator<AnnotationBase> it = statusMods.getAnnotationsToAdd().iterator(); it.hasNext();) {
+			if (it.next().getKey().equals(key)) it.remove();
+		}
+	}
 
+	public static void setAnnotation(SubmissionStatusModifications statusMods, String key, String value, boolean isPrivate) {
+		removeAnnotationIntern(statusMods, key); // make sure the key is not in the list
+		StringAnnotation annot = new StringAnnotation();
+		annot.setKey(key);
+		annot.setValue(value);
+		annot.setIsPrivate(isPrivate);
+		statusMods.getAnnotationsToAdd().add(annot);
+		statusMods.getAnnotationNamesToRemove().remove(key); // if a key had been scheduled to be removed, now unschedule
+	}
+	
+	public static void setAnnotation(SubmissionStatusModifications statusMods, String key, long value, boolean isPrivate) {
+		removeAnnotationIntern(statusMods, key); // make sure the key is not in the list
+		LongAnnotation annot = new LongAnnotation();
+		annot.setKey(key);
+		annot.setValue(value);
+		annot.setIsPrivate(isPrivate);
+		statusMods.getAnnotationsToAdd().add(annot);
+		statusMods.getAnnotationNamesToRemove().remove(key); // if a key had been scheduled to be removed, now unschedule
+	}
+	
+	public static void setAnnotation(SubmissionStatusModifications statusMods, String key, double value, boolean isPrivate) {
+		removeAnnotationIntern(statusMods, key); // make sure the key is not in the list
+		DoubleAnnotation annot = new DoubleAnnotation();
+		annot.setKey(key);
+		annot.setValue(value);
+		annot.setIsPrivate(isPrivate);
+		statusMods.getAnnotationsToAdd().add(annot);
+		statusMods.getAnnotationNamesToRemove().remove(key); // if a key had been scheduled to be removed, now unschedule
+	}
+	
+	public static void removeAnnotation(SubmissionStatusModifications statusMods, String key) {
+		statusMods.getAnnotationNamesToRemove().add(key);
+		removeAnnotationIntern(statusMods, key); // make sure the key is not in the list
+	}
+
+	public static void applyModifications(final SubmissionStatus submissionStatus, final SubmissionStatusModifications statusMods) {
+		for (AnnotationBase annot : statusMods.getAnnotationsToAdd()) {
+			if (annot instanceof StringAnnotation) 
+				setAnnotation(submissionStatus, annot.getKey(), ((StringAnnotation) annot).getValue(), annot.getIsPrivate());
+			if (annot instanceof LongAnnotation) 
+				setAnnotation(submissionStatus, annot.getKey(), ((LongAnnotation) annot).getValue(), annot.getIsPrivate());
+			if (annot instanceof DoubleAnnotation) 
+				setAnnotation(submissionStatus, annot.getKey(), ((DoubleAnnotation) annot).getValue(), annot.getIsPrivate());
+		}
+		
+		for (String key : statusMods.getAnnotationNamesToRemove()) removeAnnotation(submissionStatus, key);
+		
+		if (statusMods.getStatus()!=null) submissionStatus.setStatus(statusMods.getStatus());
+		if (statusMods.getCanCancel()!=null) submissionStatus.setCanCancel(statusMods.getCanCancel());
+		if (statusMods.getCancelRequested()!=null) submissionStatus.setCancelRequested(statusMods.getCancelRequested());
+	}
+	
 	/**
 	 * 
 	 * @throws SynapseException
@@ -338,34 +395,6 @@ public class EvaluationUtils {
 			}
 		}
 		return result;
-	}
-
-	public void updateSubmissionStatusBatch(List<SubmissionStatus> statusesToUpdate, String evaluationId) throws SynapseException {
-		// now we have a batch of statuses to update
-		for (int retry=0; retry<BATCH_UPLOAD_RETRY_COUNT; retry++) {
-			try {
-				String batchToken = null;
-				for (int offset=0; offset<statusesToUpdate.size(); offset+=PAGE_SIZE) {
-					SubmissionStatusBatch updateBatch = new SubmissionStatusBatch();
-					List<SubmissionStatus> batch = new ArrayList<SubmissionStatus>();
-					for (int i=0; i<PAGE_SIZE && offset+i<statusesToUpdate.size(); i++) {
-						batch.add(statusesToUpdate.get(offset+i));
-					}
-					updateBatch.setStatuses(batch);
-					boolean isFirstBatch = (offset==0);
-					updateBatch.setIsFirstBatch(isFirstBatch);
-					boolean isLastBatch = (offset+PAGE_SIZE)>=statusesToUpdate.size();
-					updateBatch.setIsLastBatch(isLastBatch);
-					updateBatch.setBatchToken(batchToken);
-					BatchUploadResponse response = 
-							synapse.updateSubmissionStatusBatch(evaluationId, updateBatch);
-					batchToken = response.getNextUploadToken();
-				}
-				break; // success!
-			} catch (SynapseConflictingUpdateException e) {
-				// we collided with someone else access the Evaluation.  Will retry!
-			}
-		}
 	}
 
 	private static String formatInterval(final long l) {

@@ -201,15 +201,17 @@ public class WorkflowHook  {
 			SubmissionStatus submissionStatus = sb.getSubmissionStatus();
 			try {
 				if (BooleanUtils.isTrue(submissionStatus.getCancelRequested())) {
-					setStatus(submissionStatus, SubmissionStatusEnum.INVALID, WorkflowUpdateStatus.STOPPED_UPON_REQUEST);
+					SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
+					setStatus(statusMods, SubmissionStatusEnum.INVALID, WorkflowUpdateStatus.STOPPED_UPON_REQUEST);
 					try {
-						submissionUtils.updateSubmissionStatus(submissionStatus);
+						submissionUtils.updateSubmissionStatus(submissionStatus, statusMods);
 					} catch (SynapseConflictingUpdateException e) {
 						// do nothing
 					}
 					continue;
 				}
-				initializeSubmissionAnnotations(sb);
+				SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
+				initializeSubmissionAnnotations(statusMods);
 				String workflowId = null;
 				try {
 					String submittingUserOrTeamId = SubmissionUtils.getSubmittingUserOrTeamId(sb.getSubmission());
@@ -224,18 +226,18 @@ public class WorkflowHook  {
 					}
 					WorkflowJob newJob = wes.createWorkflowJob(workflow.getWorkflowUrl(), workflow.getEntryPoint(), workflowParameters, synapseConfigFileContent);
 					workflowId = newJob.getWorkflowId();
-					EvaluationUtils.setAnnotation(submissionStatus, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
+					EvaluationUtils.setAnnotation(statusMods, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
 				} catch (InvalidSubmissionException e) {
 					// mark as INVALID and notify SUBMITTER
 					Submitter submitter = submissionUtils.getSubmitter(sb.getSubmission());
 					String messageBody = createWorkflowFailedMessage(submitter.getName(), submissionId, e.getMessage(), null, null);
-					submissionUtils.closeSubmissionAndSendNotification(submitter.getId(), submissionStatus, 
+					submissionUtils.closeSubmissionAndSendNotification(submitter.getId(), submissionStatus, statusMods,
 							SubmissionStatusEnum.INVALID, WorkflowUpdateStatus.ERROR_ENCOUNTERED_DURING_EXECUTION, e, WORKFLOW_FAILURE_SUBJECT, messageBody);
 					continue;
 				}
 
 				try {
-					submissionUtils.updateSubmissionStatus(submissionStatus);
+					submissionUtils.updateSubmissionStatus(submissionStatus, statusMods);
 				} catch (Exception e) {
 					throw new IllegalStateException("Started job "+workflowId+", but could not update submission "+submissionId, e);
 				}
@@ -250,18 +252,17 @@ public class WorkflowHook  {
 		}
 	}
 
-	private static void initializeSubmissionAnnotations(SubmissionBundle chosenBundle) {
-		SubmissionStatus ss = chosenBundle.getSubmissionStatus();
-		ss.setCancelRequested(false);
-		ss.setCanCancel(true);
-		EvaluationUtils.removeAnnotation(ss, WORKFLOW_JOB_ID);
-		EvaluationUtils.removeAnnotation(ss, FAILURE_REASON);
-		EvaluationUtils.removeAnnotation(ss, STATUS_DESCRIPTION);
+	private static void initializeSubmissionAnnotations(SubmissionStatusModifications statusMods) {
+		statusMods.setCancelRequested(false);
+		statusMods.setCanCancel(true);
+		EvaluationUtils.removeAnnotation(statusMods, WORKFLOW_JOB_ID);
+		EvaluationUtils.removeAnnotation(statusMods, FAILURE_REASON);
+		EvaluationUtils.removeAnnotation(statusMods, STATUS_DESCRIPTION);
 
 		long now = System.currentTimeMillis();
-		EvaluationUtils.setAnnotation(ss, JOB_STARTED_TIME_STAMP, now, ADMIN_ANNOTS_ARE_PRIVATE);
-		EvaluationUtils.setAnnotation(ss, JOB_LAST_UPDATED_TIME_STAMP, now, PUBLIC_ANNOTATION_SETTING);
-		chosenBundle.getSubmissionStatus().setStatus(getInProgressSubmissionState());    	
+		EvaluationUtils.setAnnotation(statusMods, JOB_STARTED_TIME_STAMP, now, ADMIN_ANNOTS_ARE_PRIVATE);
+		EvaluationUtils.setAnnotation(statusMods, JOB_LAST_UPDATED_TIME_STAMP, now, PUBLIC_ANNOTATION_SETTING);
+		statusMods.setStatus(getInProgressSubmissionState());    	
 	}
 	
 	// returns map from workflow ID to Submission Bundle
@@ -315,7 +316,7 @@ public class WorkflowHook  {
 		}
 		for (SubmissionBundle submissionBundle : submissionsWithoutJobs) {
 			String messageBody = createPipelineFailureMessage(submissionBundle.getSubmission().getId(), null, "No running workflow found for submission.");
-			submissionUtils.closeSubmissionAndSendNotification(getNotificationPrincipalId(), submissionBundle.getSubmissionStatus(), 
+			submissionUtils.closeSubmissionAndSendNotification(getNotificationPrincipalId(), submissionBundle.getSubmissionStatus(), new SubmissionStatusModifications(),
 					SubmissionStatusEnum.INVALID, WorkflowUpdateStatus.ERROR_ENCOUNTERED_DURING_EXECUTION, null, WORKFLOW_FAILURE_SUBJECT, messageBody);
 		}
 
@@ -324,22 +325,23 @@ public class WorkflowHook  {
 			final SubmissionBundle submissionBundle = workflowIdToSubmissionMap.get(job.getWorkflowId());
 			final Submission submission = submissionBundle.getSubmission();
 			final SubmissionStatus submissionStatus = submissionBundle.getSubmissionStatus();
-
+			final SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
+			
 			try {
 				Double progress = null;
 				WorkflowUpdateStatus containerCompletionStatus = null;
 				{
 					WESWorkflowStatus initialWorkflowStatus = wes.getWorkflowStatus(job);
 					progress = initialWorkflowStatus.getProgress();
-					containerCompletionStatus = updateJob(job, initialWorkflowStatus, submissionBundle);
+					containerCompletionStatus = updateJob(job, initialWorkflowStatus, submissionBundle, statusMods);
 				}
 				switch(containerCompletionStatus) {
 				case IN_PROGRESS:
-					submissionStatus.setStatus(getInProgressSubmissionState());
+					statusMods.setStatus(getInProgressSubmissionState());
 					break;
 				case DONE:
-					submissionStatus.setStatus(getFinalSubmissionState());
-					EvaluationUtils.removeAnnotation(submissionStatus, FAILURE_REASON);
+					statusMods.setStatus(getFinalSubmissionState());
+					EvaluationUtils.removeAnnotation(statusMods, FAILURE_REASON);
 					{
 						Submitter submitter = submissionUtils.getSubmitter(submission);
 						String messageBody = createWorkflowCompleteMessage(submitter.getName(), submission.getId(), 
@@ -348,12 +350,12 @@ public class WorkflowHook  {
 					}
 					break;
 				case REJECTED:
-					submissionStatus.setStatus(SubmissionStatusEnum.REJECTED);
+					statusMods.setStatus(SubmissionStatusEnum.REJECTED);
 					break;
 				case ERROR_ENCOUNTERED_DURING_EXECUTION:
 				case STOPPED_UPON_REQUEST:
 				case STOPPED_TIME_OUT:
-					submissionStatus.setStatus(SubmissionStatusEnum.INVALID);
+					statusMods.setStatus(SubmissionStatusEnum.INVALID);
 					{
 						Submitter submitter = submissionUtils.getSubmitter(submission);
 						String messageBody = createWorkflowFailedMessage(submitter.getName(), submission.getId(), 
@@ -366,11 +368,11 @@ public class WorkflowHook  {
 				default:
 					throw new IllegalStateException(containerCompletionStatus.toString());
 				}
-				EvaluationUtils.setAnnotation(submissionStatus, JOB_LAST_UPDATED_TIME_STAMP, System.currentTimeMillis(), PUBLIC_ANNOTATION_SETTING);
+				EvaluationUtils.setAnnotation(statusMods, JOB_LAST_UPDATED_TIME_STAMP, System.currentTimeMillis(), PUBLIC_ANNOTATION_SETTING);
 				if (progress!=null) {
-					EvaluationUtils.setAnnotation(submissionStatus, PROGRESS, progress, false);
+					EvaluationUtils.setAnnotation(statusMods, PROGRESS, progress, false);
 				}
-				submissionUtils.updateSubmissionStatus(submissionStatus);
+				submissionUtils.updateSubmissionStatus(submissionStatus, statusMods);
 			} catch (final Throwable t) {
 				log.error("Pipeline failed", t);
 				final String submissionId = job==null?null:submission.getId();
@@ -400,7 +402,8 @@ public class WorkflowHook  {
 	 * 
 	 * return the ContainerCompletionStatus
 	 */
-	public WorkflowUpdateStatus updateJob(final WorkflowJob job, WESWorkflowStatus workflowStatus, SubmissionBundle submissionBundle) throws Throwable {
+	public WorkflowUpdateStatus updateJob(final WorkflowJob job, WESWorkflowStatus workflowStatus, 
+			SubmissionBundle submissionBundle, SubmissionStatusModifications statusMods) throws Throwable {
 		final Submission submission = submissionBundle.getSubmission();
 		final SubmissionStatus submissionStatus = submissionBundle.getSubmissionStatus();
 
@@ -486,27 +489,27 @@ public class WorkflowHook  {
 			wes.deleteWorkFlowJob(job);
 		}
 
-		EvaluationUtils.setAnnotation(submissionStatus, JOB_LAST_UPDATED_TIME_STAMP, System.currentTimeMillis(), PUBLIC_ANNOTATION_SETTING);
+		EvaluationUtils.setAnnotation(statusMods, JOB_LAST_UPDATED_TIME_STAMP, System.currentTimeMillis(), PUBLIC_ANNOTATION_SETTING);
 		if (submissionFolderId!=null) {
-			EvaluationUtils.setAnnotation(submissionStatus, LAST_LOG_UPLOAD, System.currentTimeMillis(), ADMIN_ANNOTS_ARE_PRIVATE);    				
-			EvaluationUtils.setAnnotation(submissionStatus, SUBMISSION_ARTIFACTS_FOLDER, submissionFolderId, PUBLIC_ANNOTATION_SETTING);
+			EvaluationUtils.setAnnotation(statusMods, LAST_LOG_UPLOAD, System.currentTimeMillis(), ADMIN_ANNOTS_ARE_PRIVATE);    				
+			EvaluationUtils.setAnnotation(statusMods, SUBMISSION_ARTIFACTS_FOLDER, submissionFolderId, PUBLIC_ANNOTATION_SETTING);
 		}
 		if (updatedWhenLogFileSizeExceeded!=null) {
-			EvaluationUtils.setAnnotation(submissionStatus, LOG_FILE_SIZE_EXCEEDED, updatedWhenLogFileSizeExceeded.toString(), ADMIN_ANNOTS_ARE_PRIVATE);
+			EvaluationUtils.setAnnotation(statusMods, LOG_FILE_SIZE_EXCEEDED, updatedWhenLogFileSizeExceeded.toString(), ADMIN_ANNOTS_ARE_PRIVATE);
 		}
 		if (updatedLogFileNotificationSent!=null) {
-			EvaluationUtils.setAnnotation(submissionStatus, LOG_FILE_NOTIFICATION_SENT, updatedLogFileNotificationSent.toString(), ADMIN_ANNOTS_ARE_PRIVATE);
+			EvaluationUtils.setAnnotation(statusMods, LOG_FILE_NOTIFICATION_SENT, updatedLogFileNotificationSent.toString(), ADMIN_ANNOTS_ARE_PRIVATE);
 		}
 		if (updatedStatus!=null) {
-			EvaluationUtils.setStatus(submissionStatus, updatedStatus, workflowUpdateStatus);
+			EvaluationUtils.setStatus(statusMods, updatedStatus, workflowUpdateStatus);
 		}
 		if (failureReason!=null) {
-			EvaluationUtils.setAnnotation(submissionStatus, FAILURE_REASON, failureReason, PUBLIC_ANNOTATION_SETTING);
+			EvaluationUtils.setAnnotation(statusMods, FAILURE_REASON, failureReason, PUBLIC_ANNOTATION_SETTING);
 		} else {
-			EvaluationUtils.removeAnnotation(submissionStatus, FAILURE_REASON);
+			EvaluationUtils.removeAnnotation(statusMods, FAILURE_REASON);
 		}
 		if (progress!=null) {
-			EvaluationUtils.setAnnotation(submissionStatus, PROGRESS, progress, false);
+			EvaluationUtils.setAnnotation(statusMods, PROGRESS, progress, false);
 		}
 
 		if (workflowUpdateStatus==null) throw new IllegalStateException("Failed to set workflowUpdateStatus");

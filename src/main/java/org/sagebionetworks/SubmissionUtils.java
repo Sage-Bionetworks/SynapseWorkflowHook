@@ -1,8 +1,12 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.DEFAULT_NUM_RETRY_ATTEMPTS;
+import static org.sagebionetworks.Constants.NO_RETRY_EXCEPTIONS;
+import static org.sagebionetworks.Constants.NO_RETRY_STATUSES;
 import static org.sagebionetworks.EvaluationUtils.FAILURE_REASON;
 import static org.sagebionetworks.EvaluationUtils.JOB_LAST_UPDATED_TIME_STAMP;
 import static org.sagebionetworks.EvaluationUtils.PUBLIC_ANNOTATION_SETTING;
+import static org.sagebionetworks.EvaluationUtils.applyModifications;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,9 +17,15 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.sagebionetworks.client.SynapseClient;
+import org.sagebionetworks.client.exceptions.SynapseConflictingUpdateException;
 import org.sagebionetworks.client.exceptions.SynapseException;
 import org.sagebionetworks.client.exceptions.SynapseForbiddenException;
+import org.sagebionetworks.client.exceptions.SynapseLockedException;
 import org.sagebionetworks.client.exceptions.SynapseNotFoundException;
+import org.sagebionetworks.client.exceptions.SynapseServerException;
+import org.sagebionetworks.client.exceptions.SynapseServiceUnavailable;
+import org.sagebionetworks.client.exceptions.SynapseTableUnavailableException;
+import org.sagebionetworks.client.exceptions.SynapseTooManyRequestsException;
 import org.sagebionetworks.evaluation.model.Submission;
 import org.sagebionetworks.evaluation.model.SubmissionContributor;
 import org.sagebionetworks.evaluation.model.SubmissionStatus;
@@ -58,13 +68,31 @@ public class SubmissionUtils {
 		this.synapse=synapse;
 	}
 	
-	public SubmissionStatus updateSubmissionStatus(final SubmissionStatus submissionStatus) throws SynapseException {
+	private static final ExponentialBackoffRunner SUBMISSION_STATUS_UPDATE_RUNNER;
+	static {
+		List<Class<? extends SynapseServerException>> noRetryExceptions = new ArrayList<Class<? extends SynapseServerException>>(NO_RETRY_EXCEPTIONS);
+		// this is the one exception we DO want to retry on!
+		noRetryExceptions.remove(SynapseConflictingUpdateException.class);
+		// these are being retried on the lower level so we do NOT want to retry on them here too
+		noRetryExceptions.add(SynapseServiceUnavailable.class);
+		noRetryExceptions.add(SynapseTooManyRequestsException.class);
+		noRetryExceptions.add(SynapseLockedException.class);
+		noRetryExceptions.add(SynapseTableUnavailableException.class);
+		
+		SUBMISSION_STATUS_UPDATE_RUNNER = new ExponentialBackoffRunner(noRetryExceptions, NO_RETRY_STATUSES, DEFAULT_NUM_RETRY_ATTEMPTS);
+	}
+	
+	public SubmissionStatus updateSubmissionStatus(final SubmissionStatus submissionStatus, final SubmissionStatusModifications statusMods) throws SynapseException {
 		try {
-			return (new ExponentialBackoffRunner()).execute(new Executable<SubmissionStatus>(){
-				public SubmissionStatus execute() throws SynapseException {
+			return SUBMISSION_STATUS_UPDATE_RUNNER.execute(new Executable<SubmissionStatus,SubmissionStatus>(){
+				public SubmissionStatus execute(SubmissionStatus status) throws SynapseException {
+					applyModifications(submissionStatus, statusMods);
 					return synapse.updateSubmissionStatus(submissionStatus);
 				}
-			});
+				public SubmissionStatus refreshArgs(SubmissionStatus status) throws SynapseException {
+					return synapse.getSubmissionStatus(status.getId());
+				}
+			}, submissionStatus);
 		} catch (SynapseException s) {
 			throw s;
 		} catch (RuntimeException e) {
@@ -77,24 +105,20 @@ public class SubmissionUtils {
 	public void closeSubmissionAndSendNotification(
 			final String messageRecipientId, 
 			final SubmissionStatus ss, 
+			final SubmissionStatusModifications statusMods,
 			final SubmissionStatusEnum status,
 			final WorkflowUpdateStatus containerStatus,
 			final Throwable t,
 			final String messageSubject,
 			final String messageBody) throws Throwable {
-		EvaluationUtils.setStatus(ss, status, containerStatus);
+		EvaluationUtils.setStatus(statusMods, status, containerStatus);
 		if (t==null) {
-			EvaluationUtils.removeAnnotation(ss, FAILURE_REASON);
+			EvaluationUtils.removeAnnotation(statusMods, FAILURE_REASON);
 		} else {
-			EvaluationUtils.setAnnotation(ss, FAILURE_REASON, t.getMessage(), PUBLIC_ANNOTATION_SETTING);
+			EvaluationUtils.setAnnotation(statusMods, FAILURE_REASON, t.getMessage(), PUBLIC_ANNOTATION_SETTING);
 		}
-		EvaluationUtils.setAnnotation(ss, JOB_LAST_UPDATED_TIME_STAMP, System.currentTimeMillis(), false);
-		(new ExponentialBackoffRunner()).execute(new Executable<Void>(){
-			public Void execute() throws Throwable {
-				synapse.updateSubmissionStatus(ss);
-				return null;
-			}
-		});
+		EvaluationUtils.setAnnotation(statusMods, JOB_LAST_UPDATED_TIME_STAMP, System.currentTimeMillis(), false);
+		updateSubmissionStatus(ss, statusMods);
 		(new MessageUtils(synapse)).sendMessage(messageRecipientId, messageSubject,  messageBody);
 	}
 
