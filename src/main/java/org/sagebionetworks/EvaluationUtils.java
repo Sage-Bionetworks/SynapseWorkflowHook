@@ -27,7 +27,6 @@ import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
 
 public class EvaluationUtils {
 	private static final int PAGE_SIZE = 10;
-	private static final int BATCH_UPLOAD_RETRY_COUNT = 3;
 
 	public static final String JOB_STARTED_TIME_STAMP = "EXECUTION_STARTED";
 	private static final String TIME_REMAINING = "TIME_REMAINING";
@@ -140,7 +139,7 @@ public class EvaluationUtils {
 		return false;
 	}
 
-	private static void setAnnotation(SubmissionStatus status, String key, String value, boolean isPrivate) {
+	public static void setAnnotation(SubmissionStatus status, String key, String value, boolean isPrivate) {
 		if (value!=null && value.length()>499) value = value.substring(0, 499);
 		Annotations annotations = status.getAnnotations();
 		if (annotations==null) {
@@ -171,7 +170,7 @@ public class EvaluationUtils {
 		}
 	}
 
-	private static void setAnnotation(SubmissionStatus status, String key, long value, boolean isPrivate) {
+	public static void setAnnotation(SubmissionStatus status, String key, long value, boolean isPrivate) {
 		Annotations annotations = status.getAnnotations();
 		if (annotations==null) {
 			annotations=new Annotations();
@@ -201,7 +200,7 @@ public class EvaluationUtils {
 		}
 	}
 
-	private static void setAnnotation(SubmissionStatus status, String key, double value, boolean isPrivate) {
+	public static void setAnnotation(SubmissionStatus status, String key, double value, boolean isPrivate) {
 		Annotations annotations = status.getAnnotations();
 		if (annotations==null) {
 			annotations=new Annotations();

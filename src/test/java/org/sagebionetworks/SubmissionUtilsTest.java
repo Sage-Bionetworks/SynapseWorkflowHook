@@ -2,6 +2,7 @@ package org.sagebionetworks;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.SubmissionUtils.getRepoSuffixFromImage;
 import static org.sagebionetworks.SubmissionUtils.getSynapseProjectIdForDockerImage;
@@ -39,7 +40,6 @@ import org.sagebionetworks.schema.adapter.org.json.JSONObjectAdapterImpl;
 public class SubmissionUtilsTest {
 
 	private static final String VALID_COMMIT = "docker.synapse.org/syn123/my-repo@sha256:9e25a2dcbacacab7777095e497bd45286d53656440a72224d52d09fa3da3c8d3";
-	private static final String VALID_COMMIT_2 = "docker.synapse.org/syn123/other-repo@sha256:9e25a2dcbacacab7777095e497bd45286d53656440a72224d52d09fa3da3c8d3";
 
 	private File fileToDelete;
 
@@ -205,6 +205,11 @@ public class SubmissionUtilsTest {
 		// method under test
 		submissionUtils.validateEntityAccessGivenEntityId(ENTITY_ID, Collections.singletonList(USER_ID));
 
+	}
+	
+	@Test
+	public void testSUBMISSION_STATUS_UPDATE_RUNNER() throws Exception {
+		fail("TODO");
 	}
 
 }
