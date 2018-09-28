@@ -17,6 +17,7 @@ import static org.sagebionetworks.EvaluationUtils.PROGRESS;
 import static org.sagebionetworks.EvaluationUtils.PUBLIC_ANNOTATION_SETTING;
 import static org.sagebionetworks.EvaluationUtils.STATUS_DESCRIPTION;
 import static org.sagebionetworks.EvaluationUtils.SUBMISSION_ARTIFACTS_FOLDER;
+import static org.sagebionetworks.EvaluationUtils.applyModifications;
 import static org.sagebionetworks.EvaluationUtils.getFinalSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.getInProgressSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.getInitialSubmissionState;
@@ -334,6 +335,11 @@ public class WorkflowHook  {
 					WESWorkflowStatus initialWorkflowStatus = wes.getWorkflowStatus(job);
 					progress = initialWorkflowStatus.getProgress();
 					containerCompletionStatus = updateJob(job, initialWorkflowStatus, submissionBundle, statusMods);
+					
+					// we will apply the statusMods to the submissionStatus at the time we update in Synapse,
+					// but we do so here just so that we have access to the submisson's history and the recent updates
+					// in a single object
+					applyModifications(submissionStatus, statusMods);
 				}
 				switch(containerCompletionStatus) {
 				case IN_PROGRESS:
