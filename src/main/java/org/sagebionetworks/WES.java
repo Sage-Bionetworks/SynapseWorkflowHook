@@ -33,6 +33,8 @@ import org.apache.commons.lang.StringUtils;
 import org.fuin.utils4j.Utils4J;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
 import com.github.dockerjava.api.model.Container;
@@ -46,6 +48,8 @@ import com.github.dockerjava.api.model.Container;
  *
  */
 public class WES {
+	private static Logger log = LoggerFactory.getLogger(WES.class);
+
 	private DockerUtils dockerUtils;
 	
 	private static final String ZIP_SUFFIX = ".zip";
@@ -187,8 +191,8 @@ public class WES {
 		List<String> cmd = Arrays.asList(
 				"toil-cwl-runner", 
 				userToilParams,
-				"--noLinkImports",
 				"--workDir",  workflowRunnerWorkflowFolder.getAbsolutePath(), 
+				"--noLinkImports",
 				entrypoint,
 				workflowParametersFile.getHostPath().getAbsolutePath()
 				);
@@ -201,6 +205,10 @@ public class WES {
 
 		rwVolumes.put(hostWorkflowFolder, workflowRunnerWorkflowFolder.getAbsolutePath());
 		String workingDir = workflowRunnerWorkflowFolder.getAbsolutePath();
+		
+		log.info("workingDir: "+workingDir);
+		log.info("toil cmd: "+cmd);
+		
 		try {
 			// normally would pull from quqy.io ("quay.io/ucsc_cgl/toil")
 			// this incorporates the Synapse client as well at Toil and Docker
