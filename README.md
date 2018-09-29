@@ -35,7 +35,6 @@ where `WORKFLOW_TEMPLATE_URL` is a link to a zip file and `ROOT_TEMPLATE` is a p
 docker run --rm -it -e SYNAPSE_USERNAME=xxxxx -e SYNAPSE_PASSWORD=xxxxx \
 -e WORKFLOW_TEMPLATE_URL=https://dockstore.org:8443/api/ga4gh/v2/tools/{id}/versions/{version_id}/CWL \
 -e ROOT_TEMPLATE=xxxxx sagebionetworks/synapseworkflowhook /set_up.sh
-
 ```
 TODO:  Automatically lookup ROOT_TEMPLATE in Dockstore
 
@@ -45,14 +44,17 @@ Will print out created Project ID and the value for the `EVALUATION_TEMPLATES` i
 
 Set the following as environment variables or properties.  To use with Docker Compose you may place them in and .env file:
 - `DOCKER_ENGINE_URL` - address of the Docker engine.   Along with `DOCKER_CERT_PATH_HOST` this is needed since the Workflow Hook will manage containers.  Examples:
+
 ```
 DOCKER_ENGINE_URL=unix:///var/run/docker.sock
 ```
 or
+
 ```
 DOCKER_ENGINE_URL=tcp://192.168.0.1:2376
 ```
 - `DOCKER_CERT_PATH_HOST` - path to credentials file allowing access to Docker engine.  Example:
+
 ```
 DOCKER_CERT_PATH_HOST=/my/home/dir/.docker/machine/certs
 ```
@@ -61,10 +63,12 @@ DOCKER_CERT_PATH_HOST=/my/home/dir/.docker/machine/certs
 - `SYNAPSE_PASSWORD` - password for `SYNAPSE_USERNAME`
 - `WORKFLOW_OUTPUT_ROOT_ENTITY_ID` - root (Project or Folder) for uploaded doc's, like log files.  Hierarchy is root/submitterId/submissionId/files. May be the ID of the project generated in the set-up step, above.
 - `EVALUATION_TEMPLATES` - JSON mapping evaluation ID(s) to URL(s) for workflow template archive.  Returned by the set up step, above.  Example:
+
 ```
 {"9614045":"syn16799953"}
 ```
 - `TOIL_CLI_OPTIONS` - (optional) Space separated list of options.  See https://toil.readthedocs.io/en/3.15.0/running/cliOptions.html.  Example:
+
 ```
 TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
 ```
@@ -72,6 +76,12 @@ TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
 - `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.  If false then a separate process must 'unlock' files.  This is useful when workflows run on sensitive data and administration needs to control the volume of results returned to the workflow submitter.
 - `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` - (optional) Synapse ID of user authorized to share (unlock) workflow output files 
 	(only required if `SHARE_RESULTS_IMMEDIATELY` is false).
+- `WORKFLOW_ENGINE_DOCKER_IMAGE` - (optional) defaults to sagebionetworks/synapseworkflowhook-toil, produced from [this Dockerfile](Dockerfile.Toil).  When overriding the default, you must ensure that the existing dependencies are preserved.  One way to do this is to start your own Dockerfile with
+
+```
+FROM sagebionetworks/synapseworkflowhook-toil
+```
+and then to add additional dependencies.
 
 Now run:
 

@@ -4,6 +4,7 @@ import static org.sagebionetworks.Constants.DUMP_PROGRESS_SHELL_COMMAND;
 import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
 import static org.sagebionetworks.Constants.TOIL_CLI_OPTIONS_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME;
 import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
 import static org.sagebionetworks.Utils.createTempFile;
@@ -213,11 +214,14 @@ public class WES {
 		log.info("workingDir: "+workingDir);
 		log.info("toil cmd: "+cmd);
 		
+		String workflowEngineImage = getProoerty(WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME, false);
+		if (StringUtils.isEmpty(workflowEngineImage)) workflowEngineImage = "sagebionetworks/synapseworkflowhook-toil";
+		
 		try {
 			// normally would pull from quqy.io ("quay.io/ucsc_cgl/toil")
 			// this incorporates the Synapse client as well at Toil and Docker
 			containerId = dockerUtils.createModelContainer(
-					"sagebionetworks/synapseworkflowhook-toil",
+					workflowEngineImage,
 					containerName, 
 					roVolumes, 
 					rwVolumes, 

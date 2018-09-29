@@ -31,6 +31,8 @@ public class Constants {
 	public static final String HOST_TEMP_DIR_PROPERTY_NAME = "HOST_TEMP";
 	
 	public static final String TOIL_CLI_OPTIONS_PROPERTY_NAME = "TOIL_CLI_OPTIONS";
+	
+	public static final String WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME = "WORKFLOW_ENGINE_DOCKER_IMAGE";
 
 	// these are the paths as they appear in the agent container, 
 	// i.e. the agent container is run with "-v /host/path:/agent/path
