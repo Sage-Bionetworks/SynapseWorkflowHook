@@ -303,12 +303,18 @@ public class WorkflowHook  {
 		}
 		// if there  any running workflow jobs not in the EIP list, throw an IllegalStateException
 		if (!jobsWithoutSubmissions.isEmpty()) {
-			String msg = "Running workflow(s) without corresponding submission(s): "+jobsWithoutSubmissions;
-			final String errorMessage = createPipelineFailureMessage(null, null, msg);
+			StringBuffer msg = new StringBuffer("The following workflow job(s) are running but have no corresponding open Synapse submissions.");
+			for (WorkflowJob job : jobsWithoutSubmissions) {
+				msg.append("\n\t");
+				msg.append(job.getWorkflowId());
+			}
+			msg.append("\nOne way to recover is to delete the workflow job(s).");
+			final String errorMessage = createPipelineFailureMessage(null, null, msg.toString());
 			messageUtils.sendMessage(getNotificationPrincipalId(), SUBMISSION_PIPELINE_FAILURE_SUBJECT, 
 					errorMessage);
-			throw new IllegalStateException(msg);
+			throw new IllegalStateException(msg.toString());
 			// Note: An alternative is to kill the workflow(s) and let the WorkflowHook keep running.
+			// For now we let the submission queue administrator do this, to ensure they are aware of the issue.
 		}
 
 		Set<SubmissionBundle> submissionsWithoutJobs = new HashSet<SubmissionBundle>();
