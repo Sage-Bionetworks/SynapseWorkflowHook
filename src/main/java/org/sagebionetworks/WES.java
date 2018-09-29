@@ -133,7 +133,7 @@ public class WES {
 	
 	private ContainerRelativeFile createWorkflowParametersYamlFile(WorkflowParameters params, ContainerRelativeFile targetFolder,
 			File hostSynapseConfig) throws IOException {
-		File workflowParameters = createTempFile(".yml", targetFolder.getContainerPath());
+		File workflowParameters = createTempFile(".yaml", targetFolder.getContainerPath());
 		try (FileOutputStream fos = new FileOutputStream(workflowParameters)) {
 			IOUtils.write("submissionId: "+params.getSubmissionId()+"\n", fos, Charset.forName("UTF-8"));
 			IOUtils.write("workflowSynapseId: "+params.getSynapseWorkflowReference()+"\n", fos, Charset.forName("UTF-8"));

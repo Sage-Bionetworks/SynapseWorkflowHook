@@ -161,7 +161,6 @@ public class WorkflowAdmin {
 		evaluation.setContentSource(projectId);
 		evaluation.setName(CHALLENGE_EVALUATION_NAME+projectId);
 		evaluation.setStatus(EvaluationStatus.OPEN);
-		evaluation.setSubmissionInstructionsMessage("Your workflow submission should be a .cwl parameters file.");
 		evaluation.setSubmissionReceiptMessage("Your workflow submission has been received.   Further notifications will be sent by email.");
 		evaluation = synapseAdmin.createEvaluation(evaluation);
 		{
