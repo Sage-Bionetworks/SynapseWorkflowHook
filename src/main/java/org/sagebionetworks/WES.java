@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -186,16 +187,19 @@ public class WES {
 				throw new IllegalArgumentException("may not specify "+disallowed+" in Toil CLI options.");
 			}
 		}
-
+		
+		String[] toilParamsArray = userToilParams.split("\\s+");
+		
+		List<String> cmd = new ArrayList<String>();
+		cmd.add("toil-cwl-runner");
+		cmd.addAll(Arrays.asList(toilParamsArray));
 		// further, we must set 'workDir' and 'noLinkImports':
-		List<String> cmd = Arrays.asList(
-				"toil-cwl-runner", 
-				userToilParams,
-				"--workDir",  workflowRunnerWorkflowFolder.getAbsolutePath(), 
+		cmd.addAll(Arrays.asList("--workDir",  
+				workflowRunnerWorkflowFolder.getAbsolutePath(), 
 				"--noLinkImports",
 				entrypoint,
 				workflowParametersFile.getHostPath().getAbsolutePath()
-				);
+				));
 
 		Map<File,String> rwVolumes = new HashMap<File,String>();
 		
