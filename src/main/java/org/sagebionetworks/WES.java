@@ -214,7 +214,7 @@ public class WES {
 		log.info("workingDir: "+workingDir);
 		log.info("toil cmd: "+cmd);
 		
-		String workflowEngineImage = getProoerty(WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME, false);
+		String workflowEngineImage = getProperty(WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME, false);
 		if (StringUtils.isEmpty(workflowEngineImage)) workflowEngineImage = "sagebionetworks/synapseworkflowhook-toil";
 		
 		try {

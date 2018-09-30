@@ -53,10 +53,15 @@ or
 ```
 DOCKER_ENGINE_URL=tcp://192.168.0.1:2376
 ```
-- `DOCKER_CERT_PATH_HOST` - path to credentials file allowing access to Docker engine.  Example:
+- `DOCKER_CERT_PATH_HOST` - (optional) path to credentials files allowing networked access to Docker engine.  Required if connecting over the network (`DOCKER_ENGINE_URL` starts with `http`, `https` or `tcp`, but not with `unix`).  Example:
 
 ```
 DOCKER_CERT_PATH_HOST=/my/home/dir/.docker/machine/certs
+```
+When using `DOCKER_CERT_PATH_HOST` you must also add the following under `volumes:` in `docker-compose.yaml`:
+
+```
+    - ${DOCKER_CERT_PATH_HOST}:/certs:ro
 ```
 - `WORKFLOW_TEMPDIR` - path to a scratch folder on the host machine, mounted as /tempDir to the container running the WorkflowHook
 - `SYNAPSE_USERNAME` - Synapse credentials under which the Workflow Hook will run.  Must have access to evaluation queue(s) being serviced
@@ -106,7 +111,7 @@ In the Synapse web browser, visit the Project created in the first step.  You wi
 Stop the service:
 
 ```
-docker-compose stop
+docker-compose down
 ```
 Now, in Synapse, simply delete the root level project
 

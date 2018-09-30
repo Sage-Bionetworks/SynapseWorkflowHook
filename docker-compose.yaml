@@ -5,7 +5,6 @@ services:
       sagebionetworks/synapseworkflowhook
     volumes:
     - ${WORKFLOW_TEMPDIR}:/tempDir:rw
-    - ${DOCKER_CERT_PATH_HOST}:/certs:ro
     - /var/run:/var/run
     environment:
     - DOCKER_ENGINE_URL=${DOCKER_ENGINE_URL}

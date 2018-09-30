@@ -98,12 +98,13 @@ public class DockerUtils {
 			throw new IllegalStateException(certFile.getAbsolutePath()
 					+ " does not exist.");
 	}
+	
+	private static final String UNIX_SOCKET_PREFIX = "unix://";
 
 	public DockerUtils() {
 		// from https://github.com/docker-java/docker-java/wiki
 		String dockerEngineURL = getProperty("DOCKER_ENGINE_URL");
-		String certificatePath = getProperty("DOCKER_CERT_PATH");
-		validateCertPath(certificatePath);
+		
 		String synapseUsername = getProperty(SYNAPSE_USERNAME_PROPERTY, /* required */
 				false);
 		String synapsePassword = getProperty(SYNAPSE_PASSWORD_PROPERTY, /* required */
@@ -111,28 +112,35 @@ public class DockerUtils {
 		// https://groups.google.com/forum/?#!searchin/docker-java-dev/https$20protocol$20is$20not$20supported/docker-java-dev/6B13qxZ4eBM/UkyOCsYWBwAJ
 		Builder synapseConfigBuilder = DefaultDockerClientConfig
 				.createDefaultConfigBuilder().withDockerHost(dockerEngineURL)
-				.withDockerCertPath(certificatePath)
 				.withRegistryUsername(synapseUsername)
 				.withRegistryPassword(synapsePassword)
 				.withRegistryEmail(SYNAPSE_EMAIL)
-				.withRegistryUrl(SYNAPSE_REGISTRY_ADDRESS)
-				.withDockerTlsVerify(true);
-
-		dockerClient = DockerClientBuilder.getInstance(
-				synapseConfigBuilder.build()).build();
-
+				.withRegistryUrl(SYNAPSE_REGISTRY_ADDRESS);
+		
 		String dockerHubUsername = getProperty(DOCKERHUB_USERNAME_PROPERTY, /* required */
 				false);
 		String dockerHubPassword = getProperty(DOCKERHUB_PASSWORD_PROPERTY, /* required */
 				false);
 		Builder dockerhubConfigBuilder = DefaultDockerClientConfig
 				.createDefaultConfigBuilder().withDockerHost(dockerEngineURL)
-				.withDockerCertPath(certificatePath)
 				.withRegistryUsername(dockerHubUsername)
 				.withRegistryPassword(dockerHubPassword)
 				.withRegistryEmail(DOCKERHUB_EMAIL)
-				.withRegistryUrl(DOCKERHUB_REGISTRY_ADDRESS)
-				.withDockerTlsVerify(true);
+				.withRegistryUrl(DOCKERHUB_REGISTRY_ADDRESS);
+
+		if (!dockerEngineURL.toLowerCase().startsWith(UNIX_SOCKET_PREFIX)) {
+			String certificatePath = getProperty("DOCKER_CERT_PATH");
+			validateCertPath(certificatePath);
+			synapseConfigBuilder=synapseConfigBuilder
+					.withDockerCertPath(certificatePath)
+					.withDockerTlsVerify(true);
+			dockerhubConfigBuilder=dockerhubConfigBuilder
+					.withDockerCertPath(certificatePath)
+					.withDockerTlsVerify(true);
+		}
+
+		dockerClient = DockerClientBuilder.getInstance(
+				synapseConfigBuilder.build()).build();
 
 		dockerHubClient = DockerClientBuilder.getInstance(
 				dockerhubConfigBuilder.build()).build();
