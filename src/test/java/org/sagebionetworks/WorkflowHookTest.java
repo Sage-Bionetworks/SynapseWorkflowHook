@@ -3,8 +3,7 @@ package org.sagebionetworks;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
-import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +70,8 @@ public class WorkflowHookTest {
 		System.setProperty("WORKFLOW_OUTPUT_ROOT_ENTITY_ID", WORKFLOW_OUTPUT_ROOT_ENTITY_ID);
 		System.setProperty("SYNAPSE_USERNAME", "foo");
 		System.setProperty("SYNAPSE_PASSWORD", "bar");
+		System.setProperty(DOCKER_ENGINE_URL_PROPERTY_NAME, "unix:///var/run/docker.sock");
+		
 		long sleepTimeMillis = 1*60*1000L;
 		workflowHook = new WorkflowHook(
 				synapse, evaluationUtils,
@@ -85,6 +86,7 @@ public class WorkflowHookTest {
 		System.clearProperty("WORKFLOW_OUTPUT_ROOT_ENTITY_ID");
 		System.clearProperty("SYNAPSE_USERNAME");
 		System.clearProperty("SYNAPSE_PASSWORD");
+		System.clearProperty(DOCKER_ENGINE_URL_PROPERTY_NAME);
 	}
 
 	@Test

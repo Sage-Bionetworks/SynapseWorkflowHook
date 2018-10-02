@@ -4,6 +4,7 @@ import static org.sagebionetworks.Constants.DOCKER_CERT_PATH_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
+import static org.sagebionetworks.Constants.UNIX_SOCKET_PREFIX;
 import static org.sagebionetworks.Utils.getProperty;
 
 import java.io.BufferedReader;
@@ -101,8 +102,6 @@ public class DockerUtils {
 					+ " does not exist.");
 	}
 	
-	private static final String UNIX_SOCKET_PREFIX = "unix://";
-
 	public DockerUtils() {
 		// from https://github.com/docker-java/docker-java/wiki
 		String dockerEngineURL = getProperty(DOCKER_ENGINE_URL_PROPERTY_NAME);

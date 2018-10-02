@@ -6,6 +6,8 @@ import static org.sagebionetworks.Constants.DUMP_PROGRESS_SHELL_COMMAND;
 import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
 import static org.sagebionetworks.Constants.TOIL_CLI_OPTIONS_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.UNIX_SOCKET_PREFIX;
+import static org.sagebionetworks.Constants.UNIX_SOCKET_SUFFIX;
 import static org.sagebionetworks.Constants.WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME;
 import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
@@ -214,11 +216,18 @@ public class WES {
 		// pass Docker daemon URL and cert's folder, if any, so the container we launch can run Docker too
 		// the volume mount and env setting to let the Docker client access the daemon are defined here:
 		// https://docs.docker.com/engine/security/https/
-		containerEnv.add("DOCKER_HOST="+getProperty(DOCKER_ENGINE_URL_PROPERTY_NAME));
+		String dockerHost = getProperty(DOCKER_ENGINE_URL_PROPERTY_NAME);
+		containerEnv.add("DOCKER_HOST="+dockerHost);
 		// mount certs folder, if any
 		String hostCertsFolder = getProperty(DOCKER_CERT_PATH_HOST_PROPERTY_NAME, false);
 		if (!StringUtils.isEmpty(hostCertsFolder)) {
 			roVolumes.put(new File(hostCertsFolder), "/root/.docker/");
+		}
+		
+		if (dockerHost.startsWith(UNIX_SOCKET_PREFIX) && dockerHost.endsWith(UNIX_SOCKET_SUFFIX)) {
+			String volumeToMount = dockerHost.substring(UNIX_SOCKET_PREFIX.length(), dockerHost.length()-UNIX_SOCKET_SUFFIX.length());
+			log.info("Mounting: "+volumeToMount);
+			rwVolumes.put(new File(volumeToMount), volumeToMount);
 		}
 
 		rwVolumes.put(hostWorkflowFolder, workflowRunnerWorkflowFolder.getAbsolutePath());

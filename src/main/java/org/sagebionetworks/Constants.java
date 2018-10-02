@@ -88,5 +88,10 @@ public class Constants {
 	public static final String DOCKER_CERT_PATH_PROPERTY_NAME = "DOCKER_CERT_PATH";
 	
 	public static final String DOCKER_CERT_PATH_HOST_PROPERTY_NAME = "DOCKER_CERT_PATH_HOST";
+	
+	public static final String UNIX_SOCKET_PREFIX = "unix://";
+
+	public static final String UNIX_SOCKET_SUFFIX = "/docker.sock";
+
 
 }
