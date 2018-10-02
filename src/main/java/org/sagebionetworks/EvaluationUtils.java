@@ -28,18 +28,20 @@ import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
 public class EvaluationUtils {
 	private static final int PAGE_SIZE = 10;
 
-	public static final String JOB_STARTED_TIME_STAMP = "EXECUTION_STARTED";
-	private static final String TIME_REMAINING = "TIME_REMAINING";
-	public static final String FAILURE_REASON = "FAILURE_REASON";
-	public static final String SUBMISSION_ARTIFACTS_FOLDER = "SUBMISSION_FOLDER";
-	public static final String JOB_LAST_UPDATED_TIME_STAMP = "WORKFLOW_LAST_UPDATED";
-	public static final String STATUS_DESCRIPTION = "STATUS_DESCRIPTION";
+	// submission annotation names
+	public static final String WORKFLOW_JOB_ID = "org.sagebionetworks.SynapseWorkflowHook.workflowJobId";
+	public static final String JOB_STARTED_TIME_STAMP = "org.sagebionetworks.SynapseWorkflowHook.ExecutionStarted";
+	public static final String TIME_REMAINING = "org.sagebionetworks.SynapseWorkflowHook.TimeRemaining";
+	public static final String FAILURE_REASON = "org.sagebionetworks.SynapseWorkflowHook.FailureReason";
+	public static final String SUBMISSION_ARTIFACTS_FOLDER = "org.sagebionetworks.SynapseWorkflowHook.SubmissionFolder";
+	public static final String JOB_LAST_UPDATED_TIME_STAMP = "org.sagebionetworks.SynapseWorkflowHook.WorkflowLastUpdated";
+	public static final String STATUS_DESCRIPTION = "org.sagebionetworks.SynapseWorkflowHook.StatusDescription";
+	public static final String USER_ID_PUBLIC = "org.sagebionetworks.SynapseWorkflowHook.UserId";
+	public static final String LOG_FILE_SIZE_EXCEEDED = "org.sagebionetworks.SynapseWorkflowHook.LogFileSizeExceeded";
+	public static final String LAST_LOG_UPLOAD = "org.sagebionetworks.SynapseWorkflowHook.LastLogUpload";
+	public static final String LOG_FILE_NOTIFICATION_SENT = "org.sagebionetworks.SynapseWorkflowHook.LogFileNotificationSent";
+	public static final String PROGRESS = "org.sagebionetworks.SynapseWorkflowHook.Progress";
 	public static final boolean ADMIN_ANNOTS_ARE_PRIVATE = true;
-	public static final String USER_ID_PUBLIC = "USER_ID";
-	public static final String LOG_FILE_SIZE_EXCEEDED = "LOG_FILE_SIZE_EXCEEDED";
-	public static final String LAST_LOG_UPLOAD = "LAST_LOG_UPLOAD";
-	public static final String LOG_FILE_NOTIFICATION_SENT = "LOG_FILE_NOTIFICATION_SENT";
-	public static final String PROGRESS = "PROGRESS";
 
 	//annotation values
 	public static final String STOPPED_UPON_REQUEST_ANNOTATION_VALUE = "STOPPED UPON REQUEST";

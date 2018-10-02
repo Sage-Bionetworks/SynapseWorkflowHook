@@ -1,11 +1,17 @@
 package org.sagebionetworks;
 
-import static org.sagebionetworks.Constants.*;
+import static org.sagebionetworks.Constants.ROOT_TEMPLATE_ANNOTATION_NAME;
+import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
+import static org.sagebionetworks.EvaluationUtils.JOB_LAST_UPDATED_TIME_STAMP;
+import static org.sagebionetworks.EvaluationUtils.JOB_STARTED_TIME_STAMP;
+import static org.sagebionetworks.EvaluationUtils.STATUS_DESCRIPTION;
+import static org.sagebionetworks.EvaluationUtils.SUBMISSION_ARTIFACTS_FOLDER;
 import static org.sagebionetworks.Utils.getProperty;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -141,8 +147,24 @@ public class WorkflowAdmin {
 		return project.getId();
 	}
 	
+	private static String urlEncode(String s) {
+		try {
+			return URLEncoder.encode(s, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	private static final String DASHBOARD_TEMPLATE =
-			"${leaderboard?queryTableResults=true&path=%2Fevaluation%2Fsubmission%2Fquery%3Fquery%3Dselect%2B%2A%2Bfrom%2Bevaluation%5F##EVALUATION_ID##&paging=false&pageSize=100&showRowNumber=false&columnConfig0=none%2CSubmission ID%2CobjectId%3B%2CNONE&columnConfig1=cancelcontrol%2C%2CcancelControl%3B%2CNONE&columnConfig2=none%2CStatus%2Cstatus%3B%2CNONE&columnConfig3=none%2CStatus Details%2CSTATUS%5FDESCRIPTION%3B%2CNONE&columnConfig4=userid%2CUser%2CuserId%3B%2CNONE&columnConfig5=userid%2CUser or Team%2CsubmitterId%3B%2CNONE&columnConfig6=synapseid%2C%2CentityId%3B%2CNONE&columnConfig7=epochdate%2C%2CEXECUTION%5FSTARTED%3B%2CNONE&columnConfig8=epochdate%2C%2CWORKFLOW%5FLAST%5FUPDATED%3B%2CNONE&columnConfig9=synapseid%2CWorkflow Output%2CworkflowOutputFile%3B%2CNONE}";
+			"${leaderboard?queryTableResults=true&path=%2Fevaluation%2Fsubmission%2Fquery%3Fquery%3Dselect%2B%2A%2Bfrom%2Bevaluation%5F##EVALUATION_ID##&"+
+	"paging=false&pageSize=100&showRowNumber=false&columnConfig0=none%2CSubmission ID%2CobjectId%3B%2CNONE&columnConfig1=cancelcontrol%2C%2CcancelControl%3B%2CNONE&columnConfig2=none%2CStatus%2Cstatus%3B%2CNONE&"+
+	"columnConfig3=none%2CStatus Details%2C"+urlEncode(STATUS_DESCRIPTION)+"%3B%2CNONE&"+
+	"columnConfig4=userid%2CUser%2CuserId%3B%2CNONE&"+
+	"columnConfig5=userid%2CUser or Team%2CsubmitterId%3B%2CNONE&"+
+	"columnConfig6=synapseid%2C%2CentityId%3B%2CNONE&"+
+	"columnConfig7=epochdate%2CStarted%2C"+urlEncode(JOB_STARTED_TIME_STAMP)+"%3B%2CNONE&"+
+	"columnConfig8=epochdate%2CUpdated On%2C"+urlEncode(JOB_LAST_UPDATED_TIME_STAMP)+"%3B%2CNONE&"+
+	"columnConfig9=synapseid%2CWorkflow Output%2CworkflowOutputFile%3B%2CNONE}";
 	
 	private static final String EVALUATION_ID_PLACEHOLDER = "##EVALUATION_ID##";
 	

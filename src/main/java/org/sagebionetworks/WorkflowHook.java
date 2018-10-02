@@ -17,6 +17,7 @@ import static org.sagebionetworks.EvaluationUtils.PROGRESS;
 import static org.sagebionetworks.EvaluationUtils.PUBLIC_ANNOTATION_SETTING;
 import static org.sagebionetworks.EvaluationUtils.STATUS_DESCRIPTION;
 import static org.sagebionetworks.EvaluationUtils.SUBMISSION_ARTIFACTS_FOLDER;
+import static org.sagebionetworks.EvaluationUtils.WORKFLOW_JOB_ID;
 import static org.sagebionetworks.EvaluationUtils.applyModifications;
 import static org.sagebionetworks.EvaluationUtils.getFinalSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.getInProgressSubmissionState;
@@ -72,8 +73,6 @@ import org.slf4j.LoggerFactory;
 public class WorkflowHook  {
 	private static Logger log = LoggerFactory.getLogger(WorkflowHook.class);
 
-	// submission annotation names
-	private static final String WORKFLOW_JOB_ID = "workflowJobId";
 	private static final String LOGS_SUFFIX = "_logs";
 	private static final long UPLOAD_PERIOD_MILLIS = 30*60*1000L; // 30 min in millis
 
