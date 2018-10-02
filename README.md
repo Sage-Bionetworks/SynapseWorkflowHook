@@ -1,4 +1,4 @@
-## Synapse - Workflow Hook
+## Synapse Workflow Hook
 Links one or more Synapse Evaluation queues to a workflow engine.  Each Evaluation queue is associated with a workflow template.  Each submission is a workflow job, an instance of the workflow template.  Upon submission to the Evaluation queue the Workflow Hook initiates and tracks the workflow job, sending progress notifications and uploading log files.
 
 
@@ -116,3 +116,18 @@ docker-compose down
 Now, in Synapse, simply delete the root level project
 
 
+### Workflow creation guidelines
+
+See [this example](https://github.com/Sage-Bionetworks/SynapseWorkflowExample) for a working example of a Synapse-linked workflow.  It includes reusable steps for downloading submissions and files, uploading files and annotating submissions.    Some notes:
+
+
+- The workflow inputs are non-negotiable and must be as shown in the [sample workflow entry point](https://github.com/Sage-Bionetworks/SynapseWorkflowExample/blob/master/workflow-entrypoint.cwl).
+
+
+- If the submission is a .cwl input file then it can be download by [this script](https://github.com/Sage-Bionetworks/SynapseWorkflowExample/blob/master/downloadSubmissionFile.cwl) and parsed by a step customized from [this example](https://github.com/Sage-Bionetworks/SynapseWorkflowExample/blob/master/job_file_reader_tool_yaml_sample.cwl).
+
+
+- The workflow should not change the 'status' field of the submission status, which is reserved for the use of the Workflow Hook.
+
+
+- The workflow must have no output.  Any results should be written to Synapse along the way, e.g., as shown in in [this example](https://github.com/Sage-Bionetworks/SynapseWorkflowExample/blob/master/uploadToSynapse.cwl).
