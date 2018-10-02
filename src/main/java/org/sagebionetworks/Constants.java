@@ -82,5 +82,11 @@ public class Constants {
 	public static final Integer[] NO_RETRY_STATUSES = new Integer[] {409};
 	
 	public static int DEFAULT_NUM_RETRY_ATTEMPTS = 8; // 63 sec
+	
+	public static final String DOCKER_ENGINE_URL_PROPERTY_NAME = "DOCKER_ENGINE_URL";
+	
+	public static final String DOCKER_CERT_PATH_PROPERTY_NAME = "DOCKER_CERT_PATH";
+	
+	public static final String DOCKER_CERT_PATH_HOST_PROPERTY_NAME = "DOCKER_CERT_PATH_HOST";
 
 }

@@ -1,5 +1,7 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.DOCKER_CERT_PATH_HOST_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DUMP_PROGRESS_SHELL_COMMAND;
 import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
@@ -24,7 +26,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -179,7 +180,7 @@ public class WES {
 		// Note that we create the param's file within the folder to which we've downloaded the workflow template
 		// This gives us a single folder to mount to the Toil container
 		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, workflowFolder, 
-				new File(workflowFolder.getHostPath(), ".synapseConfig")); // TODO define string
+				new File(workflowFolder.getHostPath(), ".synapseConfig"));
 		
 		String userToilParams = getProperty(TOIL_CLI_OPTIONS_PROPERTY_NAME, false);
 		if (StringUtils.isEmpty(userToilParams)) userToilParams="";
@@ -207,6 +208,18 @@ public class WES {
 		String containerName = Utils.createContainerName();
 		String containerId = null;
 		Map<File,String> roVolumes = new HashMap<File,String>();
+		
+		List<String> containerEnv = new ArrayList<String>();
+		
+		// pass Docker daemon URL and cert's folder, if any, so the container we launch can run Docker too
+		// the volume mount and env setting to let the Docker client access the daemon are defined here:
+		// https://docs.docker.com/engine/security/https/
+		containerEnv.add("DOCKER_HOST="+getProperty(DOCKER_ENGINE_URL_PROPERTY_NAME));
+		// mount certs folder, if any
+		String hostCertsFolder = getProperty(DOCKER_CERT_PATH_HOST_PROPERTY_NAME, false);
+		if (!StringUtils.isEmpty(hostCertsFolder)) {
+			roVolumes.put(new File(hostCertsFolder), "/root/.docker/");
+		}
 
 		rwVolumes.put(hostWorkflowFolder, workflowRunnerWorkflowFolder.getAbsolutePath());
 		String workingDir = workflowRunnerWorkflowFolder.getAbsolutePath();
@@ -215,17 +228,17 @@ public class WES {
 		log.info("toil cmd: "+cmd);
 		
 		String workflowEngineImage = getProperty(WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME, false);
+		// normally would use quay.io ("quay.io/ucsc_cgl/toil")
+		// but sagebionetworks/synapseworkflowhook-toil incorporates the Synapse client as well at Toil and Docker
 		if (StringUtils.isEmpty(workflowEngineImage)) workflowEngineImage = "sagebionetworks/synapseworkflowhook-toil";
 		
 		try {
-			// normally would pull from quqy.io ("quay.io/ucsc_cgl/toil")
-			// this incorporates the Synapse client as well at Toil and Docker
 			containerId = dockerUtils.createModelContainer(
 					workflowEngineImage,
 					containerName, 
-					roVolumes, 
+					roVolumes,
 					rwVolumes, 
-					Collections.EMPTY_LIST, 
+					containerEnv,
 					cmd,
 					workingDir
 					);

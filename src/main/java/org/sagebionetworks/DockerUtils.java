@@ -1,5 +1,7 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.DOCKER_CERT_PATH_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
 import static org.sagebionetworks.Utils.getProperty;
@@ -103,7 +105,7 @@ public class DockerUtils {
 
 	public DockerUtils() {
 		// from https://github.com/docker-java/docker-java/wiki
-		String dockerEngineURL = getProperty("DOCKER_ENGINE_URL");
+		String dockerEngineURL = getProperty(DOCKER_ENGINE_URL_PROPERTY_NAME);
 		
 		String synapseUsername = getProperty(SYNAPSE_USERNAME_PROPERTY, /* required */
 				false);
@@ -129,7 +131,7 @@ public class DockerUtils {
 				.withRegistryUrl(DOCKERHUB_REGISTRY_ADDRESS);
 
 		if (!dockerEngineURL.toLowerCase().startsWith(UNIX_SOCKET_PREFIX)) {
-			String certificatePath = getProperty("DOCKER_CERT_PATH");
+			String certificatePath = getProperty(DOCKER_CERT_PATH_PROPERTY_NAME);
 			validateCertPath(certificatePath);
 			synapseConfigBuilder=synapseConfigBuilder
 					.withDockerCertPath(certificatePath)
