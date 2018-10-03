@@ -324,7 +324,6 @@ public class WES {
 			dockerUtils.renameContainer(j.getContainer().getId(), archiveContainerName(j.getContainerName()));
 		} else {
 			dockerUtils.removeContainer(j.getContainer().getId(), true);
-			dockerUtils.removeImage(j.getContainer().getImageId(), true);
 		}
 	}
 
