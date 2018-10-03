@@ -131,3 +131,31 @@ See [this example](https://github.com/Sage-Bionetworks/SynapseWorkflowExample) f
 
 
 - The workflow must have no output.  Any results should be written to Synapse along the way, e.g., as shown in in [this example](https://github.com/Sage-Bionetworks/SynapseWorkflowExample/blob/master/uploadToSynapse.cwl).
+
+### Other details
+
+#### Uploading results
+
+The workflow hook uses this folder hierarchy for uploading results:
+
+```
+< WORKFLOW_OUTPUT_ROOT_ENTITY_ID> / <SUBMITTER_ID> / <SUBMISSION_ID> / 
+```
+and
+ 
+
+```
+< WORKFLOW_OUTPUT_ROOT_ENTITY_ID> / <SUBMITTER_ID>_LOCKED / <SUBMISSION_ID> / 
+```
+where 
+
+- `<WORKFLOW_OUTPUT_ROOT_ENTITY_ID>` is a parameter passed to the hook at startup;
+
+- `<SUBMITTER_ID>` is the user or team responsible for the submission;
+
+- `<SUBMISSION_ID>` is the ID of the submission;
+
+When `SHARE_RESULTS_IMMEDIATELY` is omitted or set to `true` then logs are uploaded into the unlocked folder.  When  `SHARE_RESULTS_IMMEDIATELY` is set to `false` then logs are uploaded into the locked folder.  To share the log file (or anything else uploaded to the `_LOCKED` folder) with the submitter, a process separate from the workflow should *move* the item(s) to the unlocked folder, rather than by creating an ACL on the lowest level folder.  Such a process can run under a separate Synapse account, if desired.  If so, set `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` to be the Synapse principal ID of the account used to run that process.
+
+The workflow is passed the IDs of both the locked and unlocked submission folders so it can choose whether the submitter can see the results it uploads by choosing which folder to upload to.
+

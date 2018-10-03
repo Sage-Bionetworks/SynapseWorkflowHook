@@ -51,6 +51,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.AccessMode;
 import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Bind;
@@ -396,7 +397,11 @@ public class DockerUtils {
 	}
 
 	public void removeContainer(String containerId, boolean force) {
-		dockerClient.removeContainerCmd(containerId).withForce(force).exec();
+		try {
+			dockerClient.removeContainerCmd(containerId).withForce(force).exec();
+		} catch (NotFoundException e) {
+			log.warn("Tried to remove container "+containerId+" but trigger a NotFoundException.", e);
+		}
 	}
 
 	public void renameContainer(String containerId, String newName) {
@@ -404,7 +409,11 @@ public class DockerUtils {
 	}
 
 	public void removeImage(String imageId, boolean force) {
-		dockerClient.removeImageCmd(imageId).withForce(force).exec();
+		try {
+			dockerClient.removeImageCmd(imageId).withForce(force).exec();
+		} catch (NotFoundException e) {
+			log.warn("Tried to remove image "+imageId+" but trigger a NotFoundException.", e);
+		}
 	}
 
 	public void createVolume(String name, String driver) {
