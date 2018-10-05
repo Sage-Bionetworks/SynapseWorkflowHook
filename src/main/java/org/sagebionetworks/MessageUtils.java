@@ -48,23 +48,6 @@ public class MessageUtils {
 		}
 	}
 
-	public static String createWorkflowCompleteMessage(String teamName, String submissionId) throws IOException {
-		InputStream is = MessageUtils.class.getClassLoader().getResourceAsStream(WORKFLOW_COMPLETE_TEMPLATE);
-		if (is==null) throw new RuntimeException("Could not find file "+WORKFLOW_COMPLETE_TEMPLATE);
-		try {
-			String template = new String(IOUtils.toByteArray(is));
-			template = template.replaceAll("##team##", teamName);
-			if (!StringUtils.isEmpty(submissionId)) {
-				template = template.replaceAll("##submissionId##", "(submission ID "+submissionId+")");
-			} else {
-				template = template.replaceAll("##submissionId##", "");    			
-			}
-			return template;
-		} finally {
-			is.close();
-		}
-	}
-
 	public static String createWorkflowFailedMessage(String teamName, String submissionId, String errorMessage, String logs, String submissionFolderId) throws IOException {
 		InputStream is = MessageUtils.class.getClassLoader().getResourceAsStream(WORKFLOW_FAILED_TEMPLATE);
 		if (is==null) throw new RuntimeException("Could not find file "+WORKFLOW_FAILED_TEMPLATE);

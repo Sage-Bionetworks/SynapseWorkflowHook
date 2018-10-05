@@ -159,3 +159,7 @@ When `SHARE_RESULTS_IMMEDIATELY` is omitted or set to `true` then logs are uploa
 
 The workflow is passed the IDs of both the locked and unlocked submission folders so it can choose whether the submitter can see the results it uploads by choosing which folder to upload to.
 
+#### Timing out
+
+The workflow hook checks each submission for an integer (long) annotation named `org.sagebionetworks.SynapseWorkflowHook.TimeRemaining`.  If the value is present and not greater than zero then the submission will be stopped and a "timed out" notification sent.  If the annotation is not present then no action will be taken.  Through this mechanism a custom application can determine which submissions have exceeded their alloted time and stop them.   Such an application is communicating with the workflow hook via the submissions' annotations.  This architecture allows each submission queue administrator to customize the time-out logic rather than having some particular algorithm hard-coded into the workflow hook.
+
