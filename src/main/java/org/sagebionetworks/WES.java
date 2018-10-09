@@ -184,6 +184,9 @@ public class WES {
 		ContainerRelativeFile workflowParametersFile = createWorkflowParametersYamlFile(workflowParameters, workflowFolder, 
 				new File(workflowFolder.getHostPath(), ".synapseConfig"));
 		
+		List<String> cmd = new ArrayList<String>();
+		cmd.add("toil-cwl-runner");
+
 		String userToilParams = getProperty(TOIL_CLI_OPTIONS_PROPERTY_NAME, false);
 		if (StringUtils.isEmpty(userToilParams)) userToilParams="";
 		for (String disallowed : DISALLOWED_USER_TOIL_PARAMS) {
@@ -191,12 +194,10 @@ public class WES {
 				throw new IllegalArgumentException("may not specify "+disallowed+" in Toil CLI options.");
 			}
 		}
+		for (String toilParam : userToilParams.split("\\s+")) {
+			if (!StringUtils.isEmpty(toilParam)) cmd.add(toilParam);
+		}
 		
-		String[] toilParamsArray = userToilParams.split("\\s+");
-		
-		List<String> cmd = new ArrayList<String>();
-		cmd.add("toil-cwl-runner");
-		cmd.addAll(Arrays.asList(toilParamsArray));
 		// further, we must set 'workDir' and 'noLinkImports':
 		cmd.addAll(Arrays.asList("--workDir",  
 				workflowRunnerWorkflowFolder.getAbsolutePath(), 
