@@ -1,5 +1,7 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.DEFAULT_MAX_CONCURRENT_WORKFLOWS;
+import static org.sagebionetworks.Constants.MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.MAX_LOG_ANNOTATION_CHARS;
 import static org.sagebionetworks.Constants.NOTIFICATION_PRINCIPAL_ID;
 import static org.sagebionetworks.Constants.ROOT_TEMPLATE_ANNOTATION_NAME;
@@ -192,8 +194,16 @@ public class WorkflowHook  {
 			}
 		} // end while()
 	} // end execute()
+	
+	private static int getMaxConcurrentWorkflows() {
+		String maxString = getProperty(MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME, false);
+		if (StringUtils.isEmpty(maxString)) return DEFAULT_MAX_CONCURRENT_WORKFLOWS;
+		return Integer.parseInt(maxString);
+	}
 
 	public void createNewWorkflowJobs(String evaluationId, WorkflowURLEntrypointAndSynapseRef workflow) throws Throwable {
+		int currentWorkflowCount = wes.listWorkflowJobs().size();
+		int maxConcurrentWorkflows = getMaxConcurrentWorkflows();
 		List<SubmissionBundle> receivedSubmissions = 
 				evaluationUtils.selectSubmissions(evaluationId, getInitialSubmissionState() );
 		for (SubmissionBundle sb : receivedSubmissions) {
@@ -210,6 +220,11 @@ public class WorkflowHook  {
 					}
 					continue;
 				}
+				
+				if (currentWorkflowCount>=maxConcurrentWorkflows) {
+					log.info("We have met or exceeded the maximum concurrent workflow count, "+maxConcurrentWorkflows+", so we will not start "+submissionId+" at this time.");
+				}
+ 
 				SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
 				initializeSubmissionAnnotations(statusMods);
 				String workflowId = null;
@@ -241,6 +256,7 @@ public class WorkflowHook  {
 				} catch (Exception e) {
 					throw new IllegalStateException("Started job "+workflowId+", but could not update submission "+submissionId, e);
 				}
+				currentWorkflowCount++;
 			} catch (final Throwable t) {
 				log.error("Submission failed", t);
 				String errorMessage = createPipelineFailureMessage(submissionId, null, ExceptionUtils.getStackTrace(t));

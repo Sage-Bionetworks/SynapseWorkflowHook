@@ -51,6 +51,9 @@ public class Constants {
 	public static final String WORKFLOW_SYNAPSE_CONFIG_FILE_NAME = ".synapseConfig";
 
 	public static final String ROOT_TEMPLATE_ANNOTATION_NAME="ROOT_TEMPLATE";
+	
+	public static final String MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME = "MAX_CONCURRENT_WORKFLOWS";
+	public static final int DEFAULT_MAX_CONCURRENT_WORKFLOWS = 10;
 
 	/*
 	 * If true then rather than removing containers when they finish running, just
