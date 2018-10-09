@@ -40,9 +40,23 @@ TODO:  Automatically lookup ROOT_TEMPLATE in Dockstore
 
 Will print out created Project ID and the value for the `EVALUATION_TEMPLATES` in the following step.
 
+#### Linking your workflow with evaluation queue manually
+
+If you already have an existing project and do not want to follow the `Create a project, submission queue, workflow template and dashboard` instructions above, here are instructions on how to link your workflow with an Evaluation queue.
+
+1. Create an Evaluation queue in a Synapse Project and retrieve the Evaluation id.  View instructions [here](https://docs.synapse.org/articles/evaluation_queues.html) to learn more.  For this example, lets say the Evaluation id is `1234`.
+
+2. Obtain the link of your github repo as a zipped file. (eg. https://github.com/Sage-Bionetworks/SynapseWorkflowExample/archive/master.zip)
+
+3. Upload this URL into your project and set the annotation ROOT_TEMPLATE to be the path of your workflow.  So for the example, the value would be `SynapseWorkflowExample-master/workflow-entrypoint.cwl`.  For this example, lets say the Synapse id of this File is `syn2345`
+
+4. `EVALUATION_TEMPLATES` will be: {"1234":"syn2345"}
+
+
 #### Start the workflow service
 
-Set the following as environment variables or properties.  To use with Docker Compose you may place them in and .env file:
+Set the following as properties in a .env file to use with Docker Compose. Please carefully read through these properties and fill out the .envTemplate, but make sure you rename the template to .env. 
+
 - `DOCKER_ENGINE_URL` - address of the Docker engine.   Along with `DOCKER_CERT_PATH_HOST` this is needed since the Workflow Hook will manage containers.  Examples:
 
 ```
@@ -63,7 +77,7 @@ When using `DOCKER_CERT_PATH_HOST` you must also add the following under `volume
 ```
     - ${DOCKER_CERT_PATH_HOST}:/certs:ro
 ```
-- `WORKFLOW_TEMPDIR` - path to a scratch folder on the host machine, mounted as /tempDir to the container running the WorkflowHook
+- `WORKFLOW_TEMPDIR` - absolute path to a scratch folder on the host machine, mounted as /tempDir to the container running the WorkflowHook
 - `SYNAPSE_USERNAME` - Synapse credentials under which the Workflow Hook will run.  Must have access to evaluation queue(s) being serviced
 - `SYNAPSE_PASSWORD` - password for `SYNAPSE_USERNAME`
 - `WORKFLOW_OUTPUT_ROOT_ENTITY_ID` - root (Project or Folder) for uploaded doc's, like log files.  Hierarchy is root/submitterId/submissionId/files. May be the ID of the project generated in the set-up step, above.
@@ -72,7 +86,7 @@ When using `DOCKER_CERT_PATH_HOST` you must also add the following under `volume
 ```
 {"9614045":"syn16799953"}
 ```
-- `TOIL_CLI_OPTIONS` - (optional) Space separated list of options.  See https://toil.readthedocs.io/en/3.15.0/running/cliOptions.html.  Example:
+- `TOIL_CLI_OPTIONS` - (optional, but highly recommended) Space separated list of options. (Without the toil parameters, you may run into errors when a new workflow job is started).  See https://toil.readthedocs.io/en/3.15.0/running/cliOptions.html.  Example:
 
 ```
 TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
