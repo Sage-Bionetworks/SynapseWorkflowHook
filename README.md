@@ -42,7 +42,7 @@ Will print out created Project ID and the value for the `EVALUATION_TEMPLATES` i
 
 #### Linking your workflow with evaluation queue manually
 
-If you already have an existing project and do not want to follow the `To use` instructions above, here are instructions on how to link your workflow with an Evaluation queue.
+If you already have an existing project and do not want to follow the `Create a project, submission queue, workflow template and dashboard` instructions above, here are instructions on how to link your workflow with an Evaluation queue.
 
 1. Create an Evaluation queue in a Synapse Project and retrieve the Evaluation id.  View instructions [here](https://docs.synapse.org/articles/evaluation_queues.html) to learn more.  For this example, lets say the Evaluation id is `1234`.
 
@@ -86,7 +86,7 @@ When using `DOCKER_CERT_PATH_HOST` you must also add the following under `volume
 ```
 {"9614045":"syn16799953"}
 ```
-- `TOIL_CLI_OPTIONS` - (optional, but highly recommended) Space separated list of options. (Without the toil parameters, you may run into errors with running the workflow hook).  See https://toil.readthedocs.io/en/3.15.0/running/cliOptions.html.  Example:
+- `TOIL_CLI_OPTIONS` - (optional, but highly recommended) Space separated list of options. (Without the toil parameters, you may run into errors when a new workflow job is started).  See https://toil.readthedocs.io/en/3.15.0/running/cliOptions.html.  Example:
 
 ```
 TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
