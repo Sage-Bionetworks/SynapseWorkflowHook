@@ -121,29 +121,6 @@ public class WorkflowAdmin {
 		project = new Project();
 		project = synapseAdmin.createEntity(project);
 		System.out.println("Created "+project.getId());
-		{
-			AccessControlList acl = synapseAdmin.getACL(project.getId());
-			Set<ResourceAccess> ras = acl.getResourceAccess();
-			{
-				ResourceAccess ra = new ResourceAccess();
-				ra.setPrincipalId(Long.parseLong("273948")); // all authenticated users can view and download
-				Set<ACCESS_TYPE> accessTypes = new HashSet<ACCESS_TYPE>();
-				accessTypes.add(ACCESS_TYPE.DOWNLOAD);
-				accessTypes.add(ACCESS_TYPE.CREATE);
-				accessTypes.add(ACCESS_TYPE.UPDATE);
-				accessTypes.add(ACCESS_TYPE.READ);
-				ra.setAccessType(accessTypes);
-				ras.add(ra);
-			}
-			{
-				ResourceAccess ra = new ResourceAccess();
-				ra.setPrincipalId(Long.parseLong("273949")); // public can view
-				Set<ACCESS_TYPE> accessTypes = new HashSet<ACCESS_TYPE>();
-				accessTypes.add(ACCESS_TYPE.READ);
-				ra.setAccessType(accessTypes);
-				ras.add(ra);
-			}
-		}
 		return project.getId();
 	}
 	
@@ -185,28 +162,6 @@ public class WorkflowAdmin {
 		evaluation.setStatus(EvaluationStatus.OPEN);
 		evaluation.setSubmissionReceiptMessage("Your workflow submission has been received.   Further notifications will be sent by email.");
 		evaluation = synapseAdmin.createEvaluation(evaluation);
-		{
-			AccessControlList acl = synapseAdmin.getEvaluationAcl(evaluation.getId());
-			Set<ResourceAccess> ras = acl.getResourceAccess();
-			{
-				ResourceAccess ra = new ResourceAccess();
-				ra.setPrincipalId(Long.parseLong("273948")); // all authenticated users can submit
-				Set<ACCESS_TYPE> accessTypes = new HashSet<ACCESS_TYPE>();
-				accessTypes.add(ACCESS_TYPE.SUBMIT);
-				accessTypes.add(ACCESS_TYPE.READ);
-				ra.setAccessType(accessTypes);
-				ras.add(ra);
-			}
-			{
-				ResourceAccess ra = new ResourceAccess();
-				ra.setPrincipalId(Long.parseLong("273949")); // public can view
-				Set<ACCESS_TYPE> accessTypes = new HashSet<ACCESS_TYPE>();
-				accessTypes.add(ACCESS_TYPE.READ);
-				ra.setAccessType(accessTypes);
-				ras.add(ra);
-			}
-			synapseAdmin.updateEvaluationAcl(acl);
-		}
 		JSONObject json = new JSONObject();
 		json.put(evaluation.getId(), fileId);
 		

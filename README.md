@@ -101,6 +101,7 @@ TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
 FROM sagebionetworks/synapseworkflowhook-toil
 ```
 and then to add additional dependencies.
+- `MAX_CONCURRENT_WORKFLOWS` - (optional) the maximum number of workflows that will be allowed to run at any time.  Default is 10.
 
 Now run:
 
