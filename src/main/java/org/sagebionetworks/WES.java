@@ -214,6 +214,13 @@ public class WES {
 		
 		List<String> containerEnv = new ArrayList<String>();
 		
+		// workDir doesn't seem to work.  Let's try TMPDIR, TEMP, TMP, as per
+		// https://toil.readthedocs.io/en/latest/running/cliOptions.html
+		containerEnv.add("TMPDIR="+workflowRunnerWorkflowFolder.getAbsolutePath());
+		containerEnv.add("TEMP="+workflowRunnerWorkflowFolder.getAbsolutePath());
+		containerEnv.add("TMP="+workflowRunnerWorkflowFolder.getAbsolutePath());
+		
+		
 		// pass Docker daemon URL and cert's folder, if any, so the container we launch can run Docker too
 		// the volume mount and env setting to let the Docker client access the daemon are defined here:
 		// https://docs.docker.com/engine/security/https/
