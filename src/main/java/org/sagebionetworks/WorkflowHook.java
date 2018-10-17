@@ -230,8 +230,8 @@ public class WorkflowHook  {
 				String workflowId = null;
 				try {
 					String submittingUserOrTeamId = SubmissionUtils.getSubmittingUserOrTeamId(sb.getSubmission());
-					Folder sharedFolder=archiver.getOrCreateSubmitterFolder(submittingUserOrTeamId, true);
-					Folder lockedFolder=archiver.getOrCreateSubmitterFolder(submittingUserOrTeamId, false);
+					Folder sharedFolder=archiver.getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId, true);
+					Folder lockedFolder=archiver.getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId, false);
 					WorkflowParameters workflowParameters = new WorkflowParameters(
 							sb.getSubmission().getId(), workflow.getSynapseId(), lockedFolder.getId(), sharedFolder.getId());
 					byte[] synapseConfigFileContent;

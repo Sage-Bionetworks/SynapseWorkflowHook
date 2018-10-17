@@ -234,10 +234,8 @@ public class Archiver {
 		return submitterFolder;
 	}
 
-	public Folder getOrCreateSubmissionUploadFolder(String submissionId, String submittingUserOrTeamId) throws SynapseException {
-		String shareImmediatelyString = getProperty("SHARE_RESULTS_IMMEDIATELY", false);
-		boolean shareImmediately = StringUtils.isEmpty(shareImmediatelyString) ? true : new Boolean(shareImmediatelyString);
-		Folder submitterFolder = getOrCreateSubmitterFolder(submittingUserOrTeamId, shareImmediately);
+	public Folder getOrCreateSubmissionUploadFolder(String submissionId, String submittingUserOrTeamId, boolean sharedWithSubmitter) throws SynapseException {
+		Folder submitterFolder = getOrCreateSubmitterFolder(submittingUserOrTeamId, sharedWithSubmitter);
 
 		String name = submissionId;
 		// Entity names may only contain: letters, numbers, spaces, underscores, hypens, periods, plus signs, and parentheses
@@ -270,7 +268,11 @@ public class Archiver {
 		}
 
 		log.info("Found "+Files.size(logFile)+" bytes to log.");
-		Folder submissionFolder = getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId);
+
+		
+		String shareImmediatelyString = getProperty("SHARE_RESULTS_IMMEDIATELY", false);
+		boolean shareImmediately = StringUtils.isEmpty(shareImmediatelyString) ? true : new Boolean(shareImmediatelyString);
+		Folder submissionFolder =  getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId, shareImmediately);
 
 		archiveLogsToSynapse(logFile, filePrefix, submissionFolder);
 

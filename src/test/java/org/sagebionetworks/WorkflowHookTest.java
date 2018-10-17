@@ -3,9 +3,10 @@ package org.sagebionetworks;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.sagebionetworks.Constants.*;
+import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
@@ -49,6 +50,7 @@ public class WorkflowHookTest {
 	private static final WorkflowURLEntrypointAndSynapseRef WORKFLOW_REF;
 	
 	private static final String WORKFLOW_OUTPUT_ROOT_ENTITY_ID = "syn1234";
+	private static final String FOLDER_ID = "syn5678";
 	
 	private static final URL WORKFLOW_URL;
 	private static final String WORKFLOW_ENTRYPOINT = "SynapseWorkflowExample-master/workflow-entrypoint.cwl";
@@ -103,6 +105,7 @@ public class WorkflowHookTest {
 		profile.setOwnerId("1111");
 		when(synapse.getMyProfile()).thenReturn(profile);
 		Folder folder = new Folder();
+		folder.setId(FOLDER_ID);
 		when(synapse.createEntity(any(Folder.class))).thenReturn(folder);
 		// method under test
 		workflowHook.createNewWorkflowJobs(EVALUATION_ID, WORKFLOW_REF);
