@@ -342,6 +342,9 @@ public class WorkflowHook  {
 					SubmissionStatusEnum.INVALID, WorkflowUpdateStatus.ERROR_ENCOUNTERED_DURING_EXECUTION, null, WORKFLOW_FAILURE_SUBJECT, messageBody);
 		}
 
+		String shareImmediatelyString = getProperty("SHARE_RESULTS_IMMEDIATELY", false);
+		boolean shareImmediately = StringUtils.isEmpty(shareImmediatelyString) ? true : new Boolean(shareImmediatelyString);
+
 		// Now go through the list of running jobs, checking and updating each
 		for (WorkflowJob job : jobs) {
 			final SubmissionBundle submissionBundle = workflowIdToSubmissionMap.get(job.getWorkflowId());
@@ -349,6 +352,8 @@ public class WorkflowHook  {
 			final SubmissionStatus submissionStatus = submissionBundle.getSubmissionStatus();
 			final SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
 			
+			String sharedSubmissionFolderId = shareImmediately ? EvaluationUtils.getStringAnnotation(submissionStatus, SUBMISSION_ARTIFACTS_FOLDER) : null;
+
 			try {
 				Double progress = null;
 				WorkflowUpdateStatus containerCompletionStatus = null;
@@ -371,8 +376,7 @@ public class WorkflowHook  {
 					EvaluationUtils.removeAnnotation(statusMods, FAILURE_REASON);
 					{
 						Submitter submitter = submissionUtils.getSubmitter(submission);
-						String messageBody = createWorkflowCompleteMessage(submitter.getName(), submission.getId(), 
-								EvaluationUtils.getStringAnnotation(submissionStatus, SUBMISSION_ARTIFACTS_FOLDER));
+						String messageBody = createWorkflowCompleteMessage(submitter.getName(), submission.getId(), sharedSubmissionFolderId);
 						messageUtils.sendMessage(submitter.getId(), WORKFLOW_COMPLETE_SUBJECT,  messageBody);
 					}
 					break;
@@ -387,8 +391,7 @@ public class WorkflowHook  {
 						Submitter submitter = submissionUtils.getSubmitter(submission);
 						String messageBody = createWorkflowFailedMessage(submitter.getName(), submission.getId(), 
 								EvaluationUtils.getStringAnnotation(submissionStatus, FAILURE_REASON), 
-								null, 
-								EvaluationUtils.getStringAnnotation(submissionStatus, SUBMISSION_ARTIFACTS_FOLDER));
+								null, sharedSubmissionFolderId);
 						messageUtils.sendMessage(submitter.getId(), WORKFLOW_FAILURE_SUBJECT,  messageBody);
 					}
 					break;
@@ -506,7 +509,10 @@ public class WorkflowHook  {
 			String haveLogsBeenSentString = EvaluationUtils.getStringAnnotation(submissionStatus, LOG_FILE_NOTIFICATION_SENT);
 			boolean haveLogsBeenSent = haveLogsBeenSentString!=null && new Boolean(haveLogsBeenSentString);
 			if (isRunning && submissionFolderId!=null && !haveLogsBeenSent) {
-				String messageBody = createLogsAvailableMessage(submitter.getName(), submission.getId(), submissionFolderId);
+				String shareImmediatelyString = getProperty("SHARE_RESULTS_IMMEDIATELY", false);
+				boolean shareImmediately = StringUtils.isEmpty(shareImmediatelyString) ? true : new Boolean(shareImmediatelyString);
+				String sharedSubmissionFolderId = shareImmediately ? submissionFolderId : null;
+				String messageBody = createLogsAvailableMessage(submitter.getName(), submission.getId(), sharedSubmissionFolderId);
 				messageUtils.sendMessage(submittingUserOrTeamId, LOGS_AVAILABLE_SUBJECT, messageBody);
 				updatedLogFileNotificationSent=true;
 			}

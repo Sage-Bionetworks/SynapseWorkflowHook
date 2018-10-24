@@ -28,6 +28,8 @@ public class MessageUtils {
 	public MessageUtils(SynapseClient synapse) {
 		this.synapse=synapse;
 	}
+	
+	private static final String LOGS_AVAILABLE_STATEMENT = " Log files produced while your workflow is running will be periodically uploaded here: https://www.synapse.org/#!Synapse:";
 
 	public static String createLogsAvailableMessage(String teamName, String submissionId, String logsFolderId) throws IOException {
 		InputStream is = MessageUtils.class.getClassLoader().getResourceAsStream(LOGS_AVAILABLE_TEMPLATE);
@@ -40,7 +42,11 @@ public class MessageUtils {
 			} else {
 				template = template.replaceAll("##submissionId##", "");    			
 			}
-			template = template.replaceAll("##folder##", logsFolderId);
+			if (logsFolderId==null) {
+				template = template.replaceAll("##logsAvailableMessage##", "");    			
+			} else {
+				template = template.replaceAll("##logsAvailableMessage##", LOGS_AVAILABLE_STATEMENT+logsFolderId);    			
+			}
 			return template;
 
 		} finally {
