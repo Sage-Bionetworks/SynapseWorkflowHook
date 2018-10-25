@@ -39,7 +39,7 @@ public class EvaluationUtils {
 	public static final String USER_ID_PUBLIC = "org.sagebionetworks.SynapseWorkflowHook.UserId";
 	public static final String LOG_FILE_SIZE_EXCEEDED = "org.sagebionetworks.SynapseWorkflowHook.LogFileSizeExceeded";
 	public static final String LAST_LOG_UPLOAD = "org.sagebionetworks.SynapseWorkflowHook.LastLogUpload";
-	public static final String LOG_FILE_NOTIFICATION_SENT = "org.sagebionetworks.SynapseWorkflowHook.LogFileNotificationSent";
+	public static final String SUBMISSION_PROCESSING_STARTED_SENT = "org.sagebionetworks.SynapseWorkflowHook.SubmissionProcessingStartedSent";
 	public static final String PROGRESS = "org.sagebionetworks.SynapseWorkflowHook.Progress";
 	public static final boolean ADMIN_ANNOTS_ARE_PRIVATE = true;
 

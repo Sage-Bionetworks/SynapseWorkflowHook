@@ -1,0 +1,7 @@
+Dear ##team##:
+
+Your submission ##submissionId## is in progress. ##logsAvailableMessage## Further notification will be provided when it is complete.
+
+Sincerely,
+
+Submission Queue Administration

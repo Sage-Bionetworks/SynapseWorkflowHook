@@ -20,8 +20,8 @@ public class MessageUtils {
 	public  static final String SUBMISSION_PIPELINE_FAILURE_SUBJECT = "Submission Pipeline Failed";
 	public  static final String WORKFLOW_TERMINATED_SUBJECT = "Workflow Terminated";
 	public  static final String WORKFLOW_COMPLETE_SUBJECT = "Workflow Complete";
-	private static final String LOGS_AVAILABLE_TEMPLATE = "LogsAvailableTemplate.txt";
-	public  static final String LOGS_AVAILABLE_SUBJECT = "Workflow Logs Available";
+	private static final String SUBMISSION_PROCESSING_STARTED = "SubmissionProcessingStarted.txt";
+	public  static final String SUBMISSION_PROCESSING_STARTED_SUBJECT = "Submission Processing Started";
 	
 	private SynapseClient synapse;
 	
@@ -31,9 +31,9 @@ public class MessageUtils {
 	
 	private static final String LOGS_AVAILABLE_STATEMENT = " Log files produced while your workflow is running will be periodically uploaded here: https://www.synapse.org/#!Synapse:";
 
-	public static String createLogsAvailableMessage(String teamName, String submissionId, String logsFolderId) throws IOException {
-		InputStream is = MessageUtils.class.getClassLoader().getResourceAsStream(LOGS_AVAILABLE_TEMPLATE);
-		if (is==null) throw new RuntimeException("Could not find file "+LOGS_AVAILABLE_TEMPLATE);
+	public static String createSubmissionStartedMessage(String teamName, String submissionId, String logsFolderId) throws IOException {
+		InputStream is = MessageUtils.class.getClassLoader().getResourceAsStream(SUBMISSION_PROCESSING_STARTED);
+		if (is==null) throw new RuntimeException("Could not find file "+SUBMISSION_PROCESSING_STARTED);
 		try {
 			String template = new String(IOUtils.toByteArray(is));
 			template = template.replaceAll("##team##", teamName);

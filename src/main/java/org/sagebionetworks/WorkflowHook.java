@@ -13,7 +13,7 @@ import static org.sagebionetworks.EvaluationUtils.FAILURE_REASON;
 import static org.sagebionetworks.EvaluationUtils.JOB_LAST_UPDATED_TIME_STAMP;
 import static org.sagebionetworks.EvaluationUtils.JOB_STARTED_TIME_STAMP;
 import static org.sagebionetworks.EvaluationUtils.LAST_LOG_UPLOAD;
-import static org.sagebionetworks.EvaluationUtils.LOG_FILE_NOTIFICATION_SENT;
+import static org.sagebionetworks.EvaluationUtils.SUBMISSION_PROCESSING_STARTED_SENT;
 import static org.sagebionetworks.EvaluationUtils.LOG_FILE_SIZE_EXCEEDED;
 import static org.sagebionetworks.EvaluationUtils.PROGRESS;
 import static org.sagebionetworks.EvaluationUtils.PUBLIC_ANNOTATION_SETTING;
@@ -25,11 +25,11 @@ import static org.sagebionetworks.EvaluationUtils.getFinalSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.getInProgressSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.getInitialSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.setStatus;
-import static org.sagebionetworks.MessageUtils.LOGS_AVAILABLE_SUBJECT;
+import static org.sagebionetworks.MessageUtils.SUBMISSION_PROCESSING_STARTED_SUBJECT;
 import static org.sagebionetworks.MessageUtils.SUBMISSION_PIPELINE_FAILURE_SUBJECT;
 import static org.sagebionetworks.MessageUtils.WORKFLOW_COMPLETE_SUBJECT;
 import static org.sagebionetworks.MessageUtils.WORKFLOW_FAILURE_SUBJECT;
-import static org.sagebionetworks.MessageUtils.createLogsAvailableMessage;
+import static org.sagebionetworks.MessageUtils.createSubmissionStartedMessage;
 import static org.sagebionetworks.MessageUtils.createPipelineFailureMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowCompleteMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowFailedMessage;
@@ -444,7 +444,7 @@ public class WorkflowHook  {
 		SubmissionStatusEnum updatedStatus = null;
 		String failureReason = null;
 		Long updatedWhenLogFileSizeExceeded = null;
-		Boolean updatedLogFileNotificationSent = null;
+		Boolean updatedHasSubmissionStartedMessageBeenSent = null;
 		Double progress = null;
 		if (isRunning) {
 			boolean userHasRequestedStop=submissionStatus.getCancelRequested()!=null && submissionStatus.getCancelRequested();
@@ -504,17 +504,15 @@ public class WorkflowHook  {
 				failureReason = submissionFolderAndLogTail.getLogTail();
 			}
 
-			// NOTE:  We only send the initial notification for logs upload, not the 
-			// final notification for the job having been completed.
-			String haveLogsBeenSentString = EvaluationUtils.getStringAnnotation(submissionStatus, LOG_FILE_NOTIFICATION_SENT);
-			boolean haveLogsBeenSent = haveLogsBeenSentString!=null && new Boolean(haveLogsBeenSentString);
-			if (isRunning && submissionFolderId!=null && !haveLogsBeenSent) {
+			String hasSubmissionStartedMessageBeenSentString = EvaluationUtils.getStringAnnotation(submissionStatus, SUBMISSION_PROCESSING_STARTED_SENT);
+			boolean hasSubmissionStartedMessageBeenSent = hasSubmissionStartedMessageBeenSentString!=null && new Boolean(hasSubmissionStartedMessageBeenSentString);
+			if (isRunning && !hasSubmissionStartedMessageBeenSent) {
 				String shareImmediatelyString = getProperty("SHARE_RESULTS_IMMEDIATELY", false);
 				boolean shareImmediately = StringUtils.isEmpty(shareImmediatelyString) ? true : new Boolean(shareImmediatelyString);
 				String sharedSubmissionFolderId = shareImmediately ? submissionFolderId : null;
-				String messageBody = createLogsAvailableMessage(submitter.getName(), submission.getId(), sharedSubmissionFolderId);
-				messageUtils.sendMessage(submittingUserOrTeamId, LOGS_AVAILABLE_SUBJECT, messageBody);
-				updatedLogFileNotificationSent=true;
+				String messageBody = createSubmissionStartedMessage(submitter.getName(), submission.getId(), sharedSubmissionFolderId);
+				messageUtils.sendMessage(submittingUserOrTeamId, SUBMISSION_PROCESSING_STARTED_SUBJECT, messageBody);
+				updatedHasSubmissionStartedMessageBeenSent=true;
 			}
 		} // end uploading logs
 
@@ -530,8 +528,8 @@ public class WorkflowHook  {
 		if (updatedWhenLogFileSizeExceeded!=null) {
 			EvaluationUtils.setAnnotation(statusMods, LOG_FILE_SIZE_EXCEEDED, updatedWhenLogFileSizeExceeded.toString(), ADMIN_ANNOTS_ARE_PRIVATE);
 		}
-		if (updatedLogFileNotificationSent!=null) {
-			EvaluationUtils.setAnnotation(statusMods, LOG_FILE_NOTIFICATION_SENT, updatedLogFileNotificationSent.toString(), ADMIN_ANNOTS_ARE_PRIVATE);
+		if (updatedHasSubmissionStartedMessageBeenSent!=null) {
+			EvaluationUtils.setAnnotation(statusMods, SUBMISSION_PROCESSING_STARTED_SENT, updatedHasSubmissionStartedMessageBeenSent.toString(), ADMIN_ANNOTS_ARE_PRIVATE);
 		}
 		if (updatedStatus!=null) {
 			EvaluationUtils.setStatus(statusMods, updatedStatus, workflowUpdateStatus);

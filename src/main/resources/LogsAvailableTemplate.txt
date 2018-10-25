@@ -1,7 +1,0 @@
-Dear ##team##:
-
-Your workflow ##submissionId## is in progress. ##logsAvailableMessage## Further notification will be provided when your workflow is complete.
-
-Sincerely,
-
-Workflow Administration
