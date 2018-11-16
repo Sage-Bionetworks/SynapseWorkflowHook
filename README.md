@@ -19,6 +19,14 @@ Links one or more Synapse Evaluation queues to a workflow engine.  Each Evaluati
 	- failure reason (if workflow job failed to complete)
 	- progress (0->100%), if provided by the Workflow engine
 	
+### Setting up Amazon linux environment
+
+1. Install docker `sudo yum install docker`
+2. Must start the docker service: `sudo service docker start` or you will get this error: `Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?`
+3. Allow for non-root user to manage docker: https://docs.docker.com/install/linux/linux-postinstall/#manage-docker-as-a-non-root-user
+4. Log out and back into instance to be able to do `docker images` as current user
+5. Install docker-compose https://docs.docker.com/compose/install/#install-compose. (Do not do apt-get install docker-compose)
+
 ### To use:
 
 #### Create a project, submission queue, workflow template and dashboard
