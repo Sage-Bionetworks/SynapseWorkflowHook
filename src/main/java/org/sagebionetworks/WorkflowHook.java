@@ -223,7 +223,7 @@ public class WorkflowHook  {
 				
 				if (currentWorkflowCount>=maxConcurrentWorkflows) {
 					log.info("We have met or exceeded the maximum concurrent workflow count, "+maxConcurrentWorkflows+", so we will not start "+submissionId+" at this time.");
-					break;
+					continue;
 				}
  
 				SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
