@@ -1,4 +1,11 @@
+**Synapse Workflow Hook Build**
+
 ![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/synapseworkflowhook.svg) ![Docker Build](https://img.shields.io/docker/build/sagebionetworks/synapseworkflowhook.svg)
+
+**Toil Image Build**
+
+![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/synapseworkflowhook-toil.svg) ![Docker Build](https://img.shields.io/docker/build/sagebionetworks/synapseworkflowhook-toil.svg)
+
 
 ## Synapse Workflow Hook
 Links one or more Synapse Evaluation queues to a workflow engine.  Each Evaluation queue is associated with a workflow template.  Each submission is a workflow job, an instance of the workflow template.  Upon submission to the Evaluation queue the Workflow Hook initiates and tracks the workflow job, sending progress notifications and uploading log files.
