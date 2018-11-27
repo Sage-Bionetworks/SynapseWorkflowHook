@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.sagebionetworks.client.exceptions.SynapseException;
 import org.sagebionetworks.client.exceptions.SynapseServerException;
 import org.sagebionetworks.client.exceptions.SynapseServiceUnavailable;
 import org.sagebionetworks.client.exceptions.SynapseTooManyRequestsException;
@@ -68,7 +69,7 @@ public class ExponentialBackoffRunner {
 						throw e;	
 				}
 				lastException=e;
-			} catch (SynapseServerException e) {
+			} catch (SynapseException e) {
 				if (noRetryTypes.contains(e.getClass())) {
 						log.severe("Will not retry: "+exceptionMessage(e)); 
 						throw e;	

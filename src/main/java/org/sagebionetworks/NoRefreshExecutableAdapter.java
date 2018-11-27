@@ -1,7 +1,7 @@
 package org.sagebionetworks;
 
 /*
- * Implements an Excecutable that has a 'no-op' behavior when refreshArgs is called
+ * Implements an Executable that has a 'no-op' behavior when refreshArgs is called
  */
 public abstract class NoRefreshExecutableAdapter<T,V>  implements Executable<T, V> {
 
