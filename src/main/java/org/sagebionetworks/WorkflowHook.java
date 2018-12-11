@@ -458,6 +458,7 @@ public class WorkflowHook  {
 					workflowUpdateStatus = STOPPED_TIME_OUT;
 				}
 				updatedStatus = SubmissionStatusEnum.CLOSED;
+				isRunning=false;
 			} else {
 				progress = workflowStatus.getProgress();       
 				log.info("PROGRESS: "+progress);
