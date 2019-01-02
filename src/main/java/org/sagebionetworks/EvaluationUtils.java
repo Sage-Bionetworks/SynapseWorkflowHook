@@ -389,7 +389,7 @@ public class EvaluationUtils {
 				SubmissionBundle bundle = page.get(i);
 				result.add(bundle);
 				String id = bundle.getSubmission().getId();
-				if (ids.contains(id)) throw new RuntimeException("List has multiple copies of "+id);
+				if (ids.contains(id)) throw new IllegalStateException("List has multiple copies of "+id);
 				ids.add(id);
 				if (!bundle.getSubmissionStatus().getStatus().equals(state))
 					throw new RuntimeException("Submission "+id+" has state "+bundle.getSubmissionStatus().getStatus()+" when "+state+" was expected.");

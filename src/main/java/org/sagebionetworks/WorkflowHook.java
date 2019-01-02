@@ -204,8 +204,13 @@ public class WorkflowHook  {
 	public void createNewWorkflowJobs(String evaluationId, WorkflowURLEntrypointAndSynapseRef workflow) throws Throwable {
 		int currentWorkflowCount = wes.listWorkflowJobs().size();
 		int maxConcurrentWorkflows = getMaxConcurrentWorkflows();
-		List<SubmissionBundle> receivedSubmissions = 
-				evaluationUtils.selectSubmissions(evaluationId, getInitialSubmissionState() );
+		List<SubmissionBundle> receivedSubmissions=null;
+		try {
+			receivedSubmissions = 
+					evaluationUtils.selectSubmissions(evaluationId, getInitialSubmissionState() );
+		} catch (IllegalStateException e ) {
+			log.warn("Got IllegalStateException when calling selectSubmissions().  Will retry.  Message is: "+e.getMessage());
+		}
 		for (SubmissionBundle sb : receivedSubmissions) {
 			String submissionId=sb.getSubmission().getId();
 			SubmissionStatus submissionStatus = sb.getSubmissionStatus();
@@ -302,8 +307,14 @@ public class WorkflowHook  {
 	public void updateWorkflowJobs(String evaluationId) throws Throwable {
 		List<WorkflowJob> jobs=null;
 		// list the running jobs according to Synapse
-		List<SubmissionBundle> runningSubmissions = evaluationUtils.
-				selectSubmissions(evaluationId, getInProgressSubmissionState());
+		List<SubmissionBundle> runningSubmissions=null;
+		try {
+			runningSubmissions = evaluationUtils.
+					selectSubmissions(evaluationId, getInProgressSubmissionState());
+		} catch (IllegalStateException e ) {
+			log.warn("Got IllegalStateException when calling selectSubmissions().  Will retry.  Message is: "+e.getMessage());
+		}
+		
 		// list the running jobs according to the workflow system
 		jobs = wes.listWorkflowJobs();
 		// the two lists should be the same ...
