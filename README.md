@@ -106,7 +106,7 @@ and then to add additional dependencies.
 Now run:
 
 ```
-docker-compose up
+docker-compose --verbose up
 ```
 
 #### Submit a job to the queue
