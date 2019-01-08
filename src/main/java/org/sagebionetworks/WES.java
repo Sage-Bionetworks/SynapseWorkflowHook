@@ -75,10 +75,19 @@ public class WES {
 		return result;
 	}
 	
-	private static void downloadZip(URL url, File tempDir, File target) throws IOException {
+	private static void downloadZip(final URL url, File tempDir, File target) throws IOException {
 		File tempZipFile = createTempFile(".zip", tempDir);
-		try (InputStream is = url.openStream(); OutputStream os = new FileOutputStream(tempZipFile)) {
-			IOUtils.copy(is, os);
+		try {
+			(new ExponentialBackoffRunner()).execute(new NoRefreshExecutableAdapter<Void,Void>() {
+				@Override
+				public Void execute(Void args) throws Throwable {
+					try (InputStream is = url.openStream(); OutputStream os = new FileOutputStream(tempZipFile)) {
+						IOUtils.copy(is, os);
+					}
+					return null;
+				}}, null);
+		} catch (Throwable t) {
+			throw new RuntimeException(t);
 		}
 		Utils4J.unzip(tempZipFile, target);
 		tempZipFile.delete();
