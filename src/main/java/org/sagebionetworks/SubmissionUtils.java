@@ -90,7 +90,9 @@ public class SubmissionUtils {
 					return synapse.updateSubmissionStatus(status);
 				}
 				public SubmissionStatus refreshArgs(SubmissionStatus status) throws SynapseException {
-					return synapse.getSubmissionStatus(status.getId());
+					SubmissionStatus newStatus = synapse.getSubmissionStatus(status.getId());
+					log.warn("Failed to update submission status "+status.getId()+" my etag was "+status.getEtag()+" but Synapse has "+newStatus.getEtag());
+					return newStatus;
 				}
 			}, submissionStatus);
 		} catch (SynapseException s) {
