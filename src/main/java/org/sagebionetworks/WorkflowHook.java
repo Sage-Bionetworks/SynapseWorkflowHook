@@ -1,11 +1,15 @@
 package org.sagebionetworks;
 
-import static org.sagebionetworks.Constants.*;
+import static org.sagebionetworks.Constants.DEFAULT_MAX_CONCURRENT_WORKFLOWS;
 import static org.sagebionetworks.Constants.MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.MAX_LOG_ANNOTATION_CHARS;
 import static org.sagebionetworks.Constants.NOTIFICATION_PRINCIPAL_ID;
 import static org.sagebionetworks.Constants.ROOT_TEMPLATE_ANNOTATION_NAME;
+import static org.sagebionetworks.Constants.SUBMISSION_COMPLETED;
+import static org.sagebionetworks.Constants.SUBMISSION_FAILED;
 import static org.sagebionetworks.Constants.SUBMISSION_STARTED;
+import static org.sagebionetworks.Constants.SUBMISSION_STOPPED_BY_USER;
+import static org.sagebionetworks.Constants.SUBMISSION_TIMED_OUT;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
 import static org.sagebionetworks.DockerUtils.PROCESS_TERMINATED_ERROR_CODE;

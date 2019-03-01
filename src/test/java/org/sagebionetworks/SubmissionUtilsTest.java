@@ -8,10 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.SubmissionUtils.getRepoSuffixFromImage;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 
 import org.junit.After;
 import org.junit.Test;
