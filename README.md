@@ -92,6 +92,17 @@ When using `DOCKER_CERT_PATH_HOST` you must also add the following under `volume
 TOIL_CLI_OPTIONS=--defaultMemory 100M --retryCount 0 --defaultDisk 1000000
 ```
 - `NOTIFICATION_PRINCIPAL_ID` - (optional) Synapse ID of user or team to be notified of system issues.  If omitted then notification are sent to the Synapse account under which the workflow pipeline is run.
+- `SUBMITTER_NOTIFICATION_MASK` - controls for which events notifications are sent to the submitter.  The integer value is a union of these masks:
+
+```
+ 1: send message when job has started;
+ 2: send message when job has completed;
+ 4: send message when job has failed;
+ 8: send message when job has been stopped by user;
+16: send message when job has timed out;
+```
+
+Default is 31, i.e. send notifications for every event.
 - `SHARE_RESULTS_IMMEDIATELY` - (optional) if omitted or set to 'true', uploaded results are immediately accessible by submitter.  If false then a separate process must 'unlock' files.  This is useful when workflows run on sensitive data and administration needs to control the volume of results returned to the workflow submitter.
 - `DATA_UNLOCK_SYNAPSE_PRINCIPAL_ID` - (optional) Synapse ID of user authorized to share (unlock) workflow output files 
 	(only required if `SHARE_RESULTS_IMMEDIATELY` is false).

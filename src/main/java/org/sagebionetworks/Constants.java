@@ -7,7 +7,6 @@ import org.sagebionetworks.client.exceptions.SynapseBadRequestException;
 import org.sagebionetworks.client.exceptions.SynapseConflictingUpdateException;
 import org.sagebionetworks.client.exceptions.SynapseDeprecatedServiceException;
 import org.sagebionetworks.client.exceptions.SynapseForbiddenException;
-import org.sagebionetworks.client.exceptions.SynapseLockedException;
 import org.sagebionetworks.client.exceptions.SynapseNotFoundException;
 import org.sagebionetworks.client.exceptions.SynapseResultNotReadyException;
 import org.sagebionetworks.client.exceptions.SynapseServerException;
@@ -95,6 +94,16 @@ public class Constants {
 	public static final String UNIX_SOCKET_PREFIX = "unix://";
 
 	public static final String UNIX_SOCKET_SUFFIX = "/docker.sock";
+
+	public static final int SUBMISSION_STARTED = 1;
+	public static final int SUBMISSION_COMPLETED = 2;
+	public static final int SUBMISSION_FAILED = 4;
+	public static final int SUBMISSION_STOPPED_BY_USER = 8;
+	public static final int SUBMISSION_TIMED_OUT = 16;
+	
+	public static final String SUBMISSION_NOTIFICATION_MASK_PARAM_NAME = "SUBMISSION_NOTIFICATION_MASK";
+	
+	public static final int SUBMISSION_NOTIFICATION_MASK_DEFAULT = 31;
 
 
 }

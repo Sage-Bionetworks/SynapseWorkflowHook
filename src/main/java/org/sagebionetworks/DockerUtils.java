@@ -35,7 +35,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.glassfish.jersey.internal.util.Base64;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.sagebionetworks.repo.model.util.DockerNameUtil;
@@ -634,120 +633,5 @@ public class DockerUtils {
 			if (header.getName().equals("Content-Length")) result = Long.parseLong(header.getValue());
 		}	
 		return result;
-	}
-
-	public boolean doesImageExistAndIsAccessible(String image) throws InvalidSubmissionException, UnsupportedOperationException, IOException, JSONException {
-		log.info("DockerUtils.doesImageExist: "+image);
-		SubmissionUtils.validateDockerCommit(image);
-		log.info("DockerUtils.doesImageExist: Image is syntactically correct.");
-		int digestIndex = image.indexOf("@sha256:");
-		String repoName = image.substring(0, digestIndex);
-		String digest = image.substring(digestIndex+1);
-		String registryHost;
-		try {
-			registryHost = DockerNameUtil.getRegistryHost(repoName);
-		} catch (IllegalArgumentException e) {
-			throw new InvalidSubmissionException(e);
-		}
-
-		String repoPath;
-		if (registryHost==null) {
-			registryHost = "index.docker.io";
-			repoPath = repoName;
-		} else if (registryHost.equals(SYNAPSE_REGISTRY_ADDRESS)) {
-			repoPath = repoName.substring(SYNAPSE_REGISTRY_ADDRESS.length()+1, repoName.length());
-		} else {
-			throw new InvalidSubmissionException("Unexpected host name "+registryHost);
-		}
-
-		StringBuilder url = new StringBuilder("https://");
-		url.append(registryHost);
-		url.append("/v2/");
-		url.append(repoPath);
-		url.append("/manifests/"+digest);
-
-		HttpGet request = new HttpGet(url.toString());
-		String token = getAuthToken(request);
-		request.addHeader("Authorization", "Bearer "+token);		
-		HttpResponse response = getHttpClient().execute(request);
-
-		log.info("DockerUtils.doesImageExist: Registry returned status code "+response.getStatusLine().getStatusCode());
-
-		switch(response.getStatusLine().getStatusCode()) {
-		case HttpStatus.SC_OK:
-			return true;
-		case HttpStatus.SC_NOT_FOUND:
-			return false;
-		case HttpStatus.SC_UNAUTHORIZED:
-			return false;
-		default:
-			throw new RuntimeException("Unexpected HTTP status: "+response.getStatusLine().getStatusCode());
-		}
-	}
-
-	public long getCompressedImageSize(String image) throws UnsupportedOperationException, IOException, JSONException, InvalidSubmissionException {
-		SubmissionUtils.validateDockerCommit(image);
-		int digestIndex = image.indexOf("@sha256:");
-		String repoName = image.substring(0, digestIndex);
-		String digest = image.substring(digestIndex+1);
-		String registryHost = DockerNameUtil.getRegistryHost(repoName);
-
-		String repoPath;
-		if (registryHost==null) {
-			registryHost = "index.docker.io";
-			repoPath = repoName;
-		} else if (registryHost.equals(SYNAPSE_REGISTRY_ADDRESS)) {
-			repoPath = repoName.substring(SYNAPSE_REGISTRY_ADDRESS.length()+1, repoName.length());
-		} else {
-			throw new RuntimeException("Unexpected host "+registryHost);
-		}
-
-		StringBuilder url = new StringBuilder("https://");
-		url.append(registryHost);
-		url.append("/v2/");
-		url.append(repoPath);
-		url.append("/manifests/"+digest);
-
-		HttpGet request = new HttpGet(url.toString());
-
-		JSONObject responseJson = registryRequest(request, HttpStatus.SC_OK);
-
-		//
-		// This does not appear in the documentation https://docs.docker.com/registry/spec/api/, but
-		// if the reference is given as a *tag* then the response contains a list of layers under 'fsLayers',
-		// and sizes are not given, however if the refernece is given as a *digest* then the resoonse
-		// contains a list of layers under 'layers' and sizes ARE given with no further requests needed.
-		// In either case the size appears to be the compressed layer size.
-		//
-
-		if (responseJson.has("fsLayers")) {
-			JSONArray fsLayers = (JSONArray)responseJson.get("fsLayers");
-
-			StringBuilder layerUrlBuilder = new StringBuilder("https://");
-			layerUrlBuilder.append(registryHost);
-			layerUrlBuilder.append("/v2/");
-			layerUrlBuilder.append(repoPath);
-			layerUrlBuilder.append("/blobs/");
-			String layerUrlPrefix = layerUrlBuilder.toString();
-
-			long total = 0L;
-			for (int i=0; i<fsLayers.length(); i++) {
-				JSONObject layer = fsLayers.getJSONObject(i);
-				long layerSize = getCompressedLayerSize(layerUrlPrefix+layer.getString("blobSum"));
-				total += layerSize;
-			}
-			return total;
-		} else if (responseJson.has("layers")) {
-			JSONArray layers = (JSONArray)responseJson.get("layers");
-			long total = 0L;
-			for (int i=0; i<layers.length(); i++) {
-				JSONObject layer = layers.getJSONObject(i);
-				long layerSize =layer.getLong("size");
-				total += layerSize;
-			}
-			return total;
-		} else {
-			throw new RuntimeException("Manifest has neither 'layers' nor 'fsLayers' key.");
-		}
 	}
 }

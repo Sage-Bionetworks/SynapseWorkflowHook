@@ -1,7 +1,7 @@
 package org.sagebionetworks;
-import static org.sagebionetworks.Utils.getHostMountedScratchDir;
 import static org.sagebionetworks.Utils.getProperty;
-import static org.sagebionetworks.Utils.*;
+import static org.sagebionetworks.Utils.getSynIdProperty;
+import static org.sagebionetworks.Utils.getTempDir;
 
 import java.io.File;
 import java.io.FileFilter;

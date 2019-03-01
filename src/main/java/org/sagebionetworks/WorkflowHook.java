@@ -1,10 +1,11 @@
 package org.sagebionetworks;
 
-import static org.sagebionetworks.Constants.DEFAULT_MAX_CONCURRENT_WORKFLOWS;
+import static org.sagebionetworks.Constants.*;
 import static org.sagebionetworks.Constants.MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.MAX_LOG_ANNOTATION_CHARS;
 import static org.sagebionetworks.Constants.NOTIFICATION_PRINCIPAL_ID;
 import static org.sagebionetworks.Constants.ROOT_TEMPLATE_ANNOTATION_NAME;
+import static org.sagebionetworks.Constants.SUBMISSION_STARTED;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
 import static org.sagebionetworks.DockerUtils.PROCESS_TERMINATED_ERROR_CODE;
@@ -13,27 +14,28 @@ import static org.sagebionetworks.EvaluationUtils.FAILURE_REASON;
 import static org.sagebionetworks.EvaluationUtils.JOB_LAST_UPDATED_TIME_STAMP;
 import static org.sagebionetworks.EvaluationUtils.JOB_STARTED_TIME_STAMP;
 import static org.sagebionetworks.EvaluationUtils.LAST_LOG_UPLOAD;
-import static org.sagebionetworks.EvaluationUtils.SUBMISSION_PROCESSING_STARTED_SENT;
 import static org.sagebionetworks.EvaluationUtils.LOG_FILE_SIZE_EXCEEDED;
 import static org.sagebionetworks.EvaluationUtils.PROGRESS;
 import static org.sagebionetworks.EvaluationUtils.PUBLIC_ANNOTATION_SETTING;
 import static org.sagebionetworks.EvaluationUtils.STATUS_DESCRIPTION;
 import static org.sagebionetworks.EvaluationUtils.SUBMISSION_ARTIFACTS_FOLDER;
+import static org.sagebionetworks.EvaluationUtils.SUBMISSION_PROCESSING_STARTED_SENT;
 import static org.sagebionetworks.EvaluationUtils.WORKFLOW_JOB_ID;
 import static org.sagebionetworks.EvaluationUtils.applyModifications;
 import static org.sagebionetworks.EvaluationUtils.getFinalSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.getInProgressSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.getInitialSubmissionState;
 import static org.sagebionetworks.EvaluationUtils.setStatus;
-import static org.sagebionetworks.MessageUtils.SUBMISSION_PROCESSING_STARTED_SUBJECT;
 import static org.sagebionetworks.MessageUtils.SUBMISSION_PIPELINE_FAILURE_SUBJECT;
+import static org.sagebionetworks.MessageUtils.SUBMISSION_PROCESSING_STARTED_SUBJECT;
 import static org.sagebionetworks.MessageUtils.WORKFLOW_COMPLETE_SUBJECT;
 import static org.sagebionetworks.MessageUtils.WORKFLOW_FAILURE_SUBJECT;
-import static org.sagebionetworks.MessageUtils.createSubmissionStartedMessage;
 import static org.sagebionetworks.MessageUtils.createPipelineFailureMessage;
+import static org.sagebionetworks.MessageUtils.createSubmissionStartedMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowCompleteMessage;
 import static org.sagebionetworks.MessageUtils.createWorkflowFailedMessage;
 import static org.sagebionetworks.Utils.getProperty;
+import static org.sagebionetworks.Utils.notificationEnabled;
 import static org.sagebionetworks.WorkflowUpdateStatus.DONE;
 import static org.sagebionetworks.WorkflowUpdateStatus.ERROR_ENCOUNTERED_DURING_EXECUTION;
 import static org.sagebionetworks.WorkflowUpdateStatus.IN_PROGRESS;
@@ -234,28 +236,20 @@ public class WorkflowHook  {
 				SubmissionStatusModifications statusMods = new SubmissionStatusModifications();
 				initializeSubmissionAnnotations(statusMods);
 				String workflowId = null;
-				try {
-					String submittingUserOrTeamId = SubmissionUtils.getSubmittingUserOrTeamId(sb.getSubmission());
-					Folder sharedFolder=archiver.getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId, true);
-					Folder lockedFolder=archiver.getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId, false);
-					WorkflowParameters workflowParameters = new WorkflowParameters(
-							sb.getSubmission().getId(), workflow.getSynapseId(), lockedFolder.getId(), sharedFolder.getId());
-					byte[] synapseConfigFileContent;
-					try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-						Utils.writeSynapseConfigFile(baos);
-						synapseConfigFileContent = baos.toByteArray();
-					}
-					WorkflowJob newJob = wes.createWorkflowJob(workflow.getWorkflowUrl(), workflow.getEntryPoint(), workflowParameters, synapseConfigFileContent);
-					workflowId = newJob.getWorkflowId();
-					EvaluationUtils.setAnnotation(statusMods, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
-				} catch (InvalidSubmissionException e) {
-					// mark as INVALID and notify SUBMITTER
-					Submitter submitter = submissionUtils.getSubmitter(sb.getSubmission());
-					String messageBody = createWorkflowFailedMessage(submitter.getName(), submissionId, e.getMessage(), null, null);
-					submissionUtils.closeSubmissionAndSendNotification(submitter.getId(), submissionStatus, statusMods,
-							SubmissionStatusEnum.INVALID, WorkflowUpdateStatus.ERROR_ENCOUNTERED_DURING_EXECUTION, e, WORKFLOW_FAILURE_SUBJECT, messageBody);
-					continue;
+
+				String submittingUserOrTeamId = SubmissionUtils.getSubmittingUserOrTeamId(sb.getSubmission());
+				Folder sharedFolder=archiver.getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId, true);
+				Folder lockedFolder=archiver.getOrCreateSubmissionUploadFolder(submissionId, submittingUserOrTeamId, false);
+				WorkflowParameters workflowParameters = new WorkflowParameters(
+						sb.getSubmission().getId(), workflow.getSynapseId(), lockedFolder.getId(), sharedFolder.getId());
+				byte[] synapseConfigFileContent;
+				try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+					Utils.writeSynapseConfigFile(baos);
+					synapseConfigFileContent = baos.toByteArray();
 				}
+				WorkflowJob newJob = wes.createWorkflowJob(workflow.getWorkflowUrl(), workflow.getEntryPoint(), workflowParameters, synapseConfigFileContent);
+				workflowId = newJob.getWorkflowId();
+				EvaluationUtils.setAnnotation(statusMods, WORKFLOW_JOB_ID, workflowId, PUBLIC_ANNOTATION_SETTING);
 
 				try {
 					submissionUtils.updateSubmissionStatus(submissionStatus, statusMods);
@@ -386,7 +380,7 @@ public class WorkflowHook  {
 				case DONE:
 					statusMods.setStatus(getFinalSubmissionState());
 					EvaluationUtils.removeAnnotation(statusMods, FAILURE_REASON);
-					{
+					if (notificationEnabled(SUBMISSION_COMPLETED)) {
 						Submitter submitter = submissionUtils.getSubmitter(submission);
 						String messageBody = createWorkflowCompleteMessage(submitter.getName(), submission.getId(), sharedSubmissionFolderId);
 						messageUtils.sendMessage(submitter.getId(), WORKFLOW_COMPLETE_SUBJECT,  messageBody);
@@ -399,7 +393,9 @@ public class WorkflowHook  {
 				case STOPPED_UPON_REQUEST:
 				case STOPPED_TIME_OUT:
 					statusMods.setStatus(SubmissionStatusEnum.INVALID);
-					{
+					if (containerCompletionStatus==ERROR_ENCOUNTERED_DURING_EXECUTION && notificationEnabled(SUBMISSION_FAILED) || 
+						containerCompletionStatus==STOPPED_UPON_REQUEST && notificationEnabled(SUBMISSION_STOPPED_BY_USER) || 
+						containerCompletionStatus==STOPPED_TIME_OUT && notificationEnabled(SUBMISSION_TIMED_OUT)) {
 						Submitter submitter = submissionUtils.getSubmitter(submission);
 						String messageBody = createWorkflowFailedMessage(submitter.getName(), submission.getId(), 
 								EvaluationUtils.getStringAnnotation(submissionStatus, FAILURE_REASON), 
@@ -519,7 +515,7 @@ public class WorkflowHook  {
 
 			String hasSubmissionStartedMessageBeenSentString = EvaluationUtils.getStringAnnotation(submissionStatus, SUBMISSION_PROCESSING_STARTED_SENT);
 			boolean hasSubmissionStartedMessageBeenSent = hasSubmissionStartedMessageBeenSentString!=null && new Boolean(hasSubmissionStartedMessageBeenSentString);
-			if (isRunning && !hasSubmissionStartedMessageBeenSent) {
+			if (isRunning && !hasSubmissionStartedMessageBeenSent && notificationEnabled(SUBMISSION_STARTED)) {
 				String shareImmediatelyString = getProperty("SHARE_RESULTS_IMMEDIATELY", false);
 				boolean shareImmediately = StringUtils.isEmpty(shareImmediatelyString) ? true : new Boolean(shareImmediatelyString);
 				String sharedSubmissionFolderId = shareImmediately ? submissionFolderId : null;

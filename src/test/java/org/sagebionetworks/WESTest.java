@@ -1,8 +1,8 @@
 package org.sagebionetworks;
 
+import static org.junit.Assert.assertTrue;
 import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
-import static org.junit.Assert.*;
 
 import java.io.File;
 import java.net.URL;

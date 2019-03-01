@@ -169,10 +169,9 @@ public class WES {
 	 * @param workflowParameters the parameters to be passed to the workflow
 	 * @return the created workflow job
 	 * @throws IOException
-	 * @throws InvalidSubmissionException
 	 */
 	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, 
-			WorkflowParameters workflowParameters, byte[] synapseConfigFileContent) throws IOException, InvalidSubmissionException {
+			WorkflowParameters workflowParameters, byte[] synapseConfigFileContent) throws IOException {
 		ContainerRelativeFile workflowFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
 		
 		// The folder with the workflow and param's, from the POV of the host
@@ -273,7 +272,7 @@ public class WES {
 		} catch (DockerPullException e) {
 			if (containerId!=null) dockerUtils.removeContainer(containerId, true);
 
-			throw new InvalidSubmissionException(e);
+			throw e;
 		}
 
 		WorkflowJobImpl workflowJob = new WorkflowJobImpl();

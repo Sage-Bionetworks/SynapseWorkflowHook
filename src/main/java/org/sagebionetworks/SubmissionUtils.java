@@ -9,7 +9,6 @@ import static org.sagebionetworks.EvaluationUtils.PUBLIC_ANNOTATION_SETTING;
 import static org.sagebionetworks.EvaluationUtils.applyModifications;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,9 +18,7 @@ import org.apache.commons.lang.StringUtils;
 import org.sagebionetworks.client.SynapseClient;
 import org.sagebionetworks.client.exceptions.SynapseConflictingUpdateException;
 import org.sagebionetworks.client.exceptions.SynapseException;
-import org.sagebionetworks.client.exceptions.SynapseForbiddenException;
 import org.sagebionetworks.client.exceptions.SynapseLockedException;
-import org.sagebionetworks.client.exceptions.SynapseNotFoundException;
 import org.sagebionetworks.client.exceptions.SynapseServerException;
 import org.sagebionetworks.client.exceptions.SynapseServiceUnavailable;
 import org.sagebionetworks.client.exceptions.SynapseTableUnavailableException;
@@ -30,15 +27,9 @@ import org.sagebionetworks.evaluation.model.Submission;
 import org.sagebionetworks.evaluation.model.SubmissionContributor;
 import org.sagebionetworks.evaluation.model.SubmissionStatus;
 import org.sagebionetworks.evaluation.model.SubmissionStatusEnum;
-import org.sagebionetworks.reflection.model.PaginatedResults;
-import org.sagebionetworks.repo.model.ACCESS_TYPE;
-import org.sagebionetworks.repo.model.AccessControlList;
 import org.sagebionetworks.repo.model.Entity;
 import org.sagebionetworks.repo.model.EntityBundle;
-import org.sagebionetworks.repo.model.EntityHeader;
-import org.sagebionetworks.repo.model.ResourceAccess;
 import org.sagebionetworks.repo.model.Team;
-import org.sagebionetworks.repo.model.TeamMember;
 import org.sagebionetworks.repo.model.UserProfile;
 import org.sagebionetworks.repo.model.util.DockerNameUtil;
 import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
@@ -124,24 +115,6 @@ public class SubmissionUtils {
 		(new MessageUtils(synapse)).sendMessage(messageRecipientId, messageSubject,  messageBody);
 	}
 
-	public static void validateDockerCommit(String s) throws InvalidSubmissionException {
-		log.info("validating: "+s);
-		String[] repoAndDigest = s.split("@");
-		// make sure there's a repo followed by a digest
-		if (repoAndDigest.length!=2 || 
-				StringUtils.isEmpty(repoAndDigest[0]) ||
-				repoAndDigest[0].endsWith("/") ||
-				!Pattern.matches(DOCKER_NAME_REGEX, repoAndDigest[0]) ||
-				!Pattern.matches(DOCKER_DIGEST_REGEX, repoAndDigest[1])) 
-			throw new InvalidSubmissionException(s+" is not a valid Docker commit.  Must be [host/]path@sha256:digest");
-		log.info("done validating");
-	}
-
-	public static void validateSynapseId(String s) throws InvalidSubmissionException {
-		if (!Pattern.matches(SYNID_REGEX, s.toLowerCase().trim()))
-			throw new InvalidSubmissionException(s+" is not a Synapse ID.");
-	}
-
 	// docker.synapse.org/syn123/foo/bar@sha256:...  ->  foo/bar
 	public static String getRepoSuffixFromImage(String s) {
 		int at = s.indexOf("@");
@@ -165,79 +138,8 @@ public class SubmissionUtils {
 		return image.substring(0, i);
 	}
 
-	/*
-	 * returns the project Id for a Synapse Docker image.  If it's a valid commit but
-	 * not a valid commit for the Synapse registry, then returns null.  
-	 * If it refers to the Synapse registry but the path is not valid (synapseId/name),
-	 * then throws InvalidSubmissionException
-	 */
-	public static String getSynapseProjectIdForDockerImage(String image) throws InvalidSubmissionException {
-		validateDockerCommit(image);
-		String repo = getRepoNameForDockerImage(image);
-		return getSynapseProjectIdForRepoName(repo);
-	}
-
-	public static String getSynapseProjectIdForRepoName(String repo) throws InvalidSubmissionException {
-		String hostPrefix = DockerNameUtil.getRegistryHost(repo);
-		if (hostPrefix==null) return null; // it's not a Synapse Docker image
-		if (!hostPrefix.equals(Utils.SYNAPSE_DOCKER_HOST)) return null; // it's not a Synapse Docker image
-		String repoPath = repo.substring(hostPrefix.length()+1);
-		String[] pathElements = repoPath.split("/");
-		if (pathElements.length<1) throw new InvalidSubmissionException("Not a valid Synapse Docker repository name: "+repo);
-		String synapseId = pathElements[0];
-		if (!Pattern.matches(SYNID_REGEX, synapseId)) throw new InvalidSubmissionException("Not a valid Synapse Docker repository name: "+repo);
-		return synapseId;
-	};
-
 	private static final long TEAM_MEMBERS_PAGE_SIZE = 50;
 
-	/*
-	 * At least one of the contributors must have READ access to the entity
-	 */
-	public void validateEntityAccessGivenEntityId(String entityId, Collection<String> contributors) throws SynapseException, InvalidSubmissionException {
-		// get entity benefactor
-		EntityHeader benefactor;
-		try {
-			benefactor = synapse.getEntityBenefactor(entityId);
-		} catch (SynapseForbiddenException e) {
-			throw new InvalidSubmissionException("Entity "+entityId+" is not acessible by the workflow infrastructure. Please check the sharing settings.", e);
-		} catch (SynapseNotFoundException e) {
-			throw new InvalidSubmissionException("Entity "+entityId+" does not exist.", e);
-		}
-		validateEntityAccessGivenBenefactorId(benefactor.getId(), entityId, contributors);
-	}
-
-	public void validateEntityAccessGivenBenefactorId(String benefactorId, String entityReference, Collection<String> contributors) throws SynapseException, InvalidSubmissionException {
-		// get entity ACL
-		AccessControlList acl = synapse.getACL(benefactorId);
-		// get membership in all the Teams in the ACL ('explode' the ACL)
-		// list the users that have READ access
-		List<String> usersHavingReadAccess = new ArrayList<String>();
-		for (ResourceAccess ra : acl.getResourceAccess()) {
-			if (ra.getAccessType().contains(ACCESS_TYPE.READ)) {
-				Long principalId = ra.getPrincipalId();
-				for (long offset=0, totalNumberOfResults = 1000L; offset<totalNumberOfResults; offset+=TEAM_MEMBERS_PAGE_SIZE) {
-					PaginatedResults<TeamMember> members = synapse.getTeamMembers(""+principalId, null, TEAM_MEMBERS_PAGE_SIZE, offset);
-					totalNumberOfResults = members.getTotalNumberOfResults();
-					if (members.getTotalNumberOfResults()==0L) {
-						// so it's a user, not a team
-						usersHavingReadAccess.add(""+principalId);
-					} else {
-						for (TeamMember member : members.getResults()) {
-							usersHavingReadAccess.add(member.getMember().getOwnerId());
-						}					
-					}
-				}
-			}
-		}
-		if (usersHavingReadAccess.contains(AUTH_USERS_PRINCIPAL_ID) || 
-				usersHavingReadAccess.contains(PUBLIC_PRINCIPAL_ID)) return;
-		usersHavingReadAccess.retainAll(contributors);
-		// if there is any overlap between the contributors and the users having READ access 
-		usersHavingReadAccess.retainAll(contributors);
-		if (usersHavingReadAccess.isEmpty()) 
-			throw new InvalidSubmissionException(entityReference+" is not accessible by the submission creators.");
-	}
 
 	public static Class<Entity> getEntityTypeFromSubmission(Submission sub) throws JSONObjectAdapterException {
 		EntityBundle bundle = EntityFactory.createEntityFromJSONString(

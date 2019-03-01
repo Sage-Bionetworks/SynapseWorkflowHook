@@ -2,6 +2,8 @@ package org.sagebionetworks;
 
 import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_DEFAULT;
 import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.SUBMISSION_NOTIFICATION_MASK_DEFAULT;
+import static org.sagebionetworks.Constants.SUBMISSION_NOTIFICATION_MASK_PARAM_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
 
@@ -45,7 +47,7 @@ public class Utils {
 	public static final String DECIMAL_PATTERN = "##.####";
 
 	private static Properties properties = null;
-
+	
 	public static void initProperties() {
 		if (properties!=null) return;
 		properties = new Properties();
@@ -236,6 +238,17 @@ public class Utils {
 		String username=getProperty(SYNAPSE_USERNAME_PROPERTY);
 		String password=getProperty(SYNAPSE_PASSWORD_PROPERTY);;
 		IOUtils.write("[authentication]\nusername="+username+"\npassword="+password+"\n", os, Charset.forName("UTF-8"));
+	}
+	
+	public static boolean notificationEnabled(int mask) {
+		String notificationEnabledString = getProperty(SUBMISSION_NOTIFICATION_MASK_PARAM_NAME, false);
+		int notificationEnabled;
+		if (StringUtils.isEmpty(notificationEnabledString)) {
+			notificationEnabled = SUBMISSION_NOTIFICATION_MASK_DEFAULT;
+		} else {
+			notificationEnabled = Integer.parseInt(notificationEnabledString);
+		}
+		return (notificationEnabled & mask) !=0;
 	}
 
 }
