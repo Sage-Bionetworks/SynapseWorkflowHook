@@ -21,13 +21,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.sagebionetworks.repo.model.EntityBundle;
 import org.sagebionetworks.repo.model.docker.DockerRepository;
-import org.sagebionetworks.repo.model.file.FileHandle;
-import org.sagebionetworks.repo.model.file.PreviewFileHandle;
 import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
 import org.sagebionetworks.schema.adapter.org.json.EntityFactory;
 
@@ -129,23 +124,6 @@ public class Utils {
 	public static boolean isDirectoryEmpty(File dir) {
 		File[] files = dir.listFiles();
 		return files==null || files.length==0;
-	}
-
-	public static FileHandle getFileHandleFromEntityBundle(String s) {
-		try {
-			JSONObject bundle = new JSONObject(s);
-			JSONArray fileHandles = (JSONArray)bundle.get("fileHandles");
-			for (int i=0; i<fileHandles.length(); i++) {
-				String jsonString = fileHandles.getString(i);
-				FileHandle fileHandle = EntityFactory.createEntityFromJSONString(jsonString, FileHandle.class);
-				if (!(fileHandle instanceof PreviewFileHandle)) return fileHandle;
-			}
-			throw new IllegalArgumentException("File has no file handle ID");
-		} catch (JSONException e) {
-			throw new RuntimeException(e);
-		} catch (JSONObjectAdapterException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	public static String getDockerRepositoryNameFromEntityBundle(String s) {

@@ -1,18 +1,25 @@
 package org.sagebionetworks;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
+import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Map;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -23,7 +30,9 @@ import org.sagebionetworks.evaluation.model.SubmissionBundle;
 import org.sagebionetworks.evaluation.model.SubmissionStatus;
 import org.sagebionetworks.evaluation.model.SubmissionStatusEnum;
 import org.sagebionetworks.repo.model.Folder;
+import org.sagebionetworks.repo.model.Project;
 import org.sagebionetworks.repo.model.UserProfile;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class WorkflowHookTest {
@@ -89,6 +98,7 @@ public class WorkflowHookTest {
 		System.clearProperty("SYNAPSE_USERNAME");
 		System.clearProperty("SYNAPSE_PASSWORD");
 		System.clearProperty(DOCKER_ENGINE_URL_PROPERTY_NAME);
+		System.clearProperty("EVALUATION_TEMPLATES");
 	}
 
 	@Test
@@ -117,6 +127,37 @@ public class WorkflowHookTest {
 	@Test 
 	public void testUpdateWorkflowJobs() throws Throwable {
 		workflowHook.updateWorkflowJobs(EVALUATION_ID);
+	}
+	
+	private static String ZIP_FILE_URL = "https://github.com/Sage-Bionetworks/SynapseWorkflowExample/archive/master.zip";
+	private static String ROOT_TEMPLATE = "SynapseWorkflowExample-master/workflow-entrypoint.cwl";
+	
+	@Ignore
+	@Test
+	public void testGetWorkflowURLAndEntrypoint() throws Throwable {
+		System.setProperty(SYNAPSE_USERNAME_PROPERTY, "xxx");
+		System.setProperty(SYNAPSE_PASSWORD_PROPERTY, "xxx");
+		WorkflowAdmin workflowAdmin = new WorkflowAdmin();
+		String projectId = workflowAdmin.createProject();
+		String fileEntityId = workflowAdmin.createExternalFileEntity(ZIP_FILE_URL, projectId, ROOT_TEMPLATE);
+
+		DockerUtils dockerUtils = new DockerUtils();
+
+		WorkflowHook wh = new WorkflowHook(workflowAdmin.getSynapseClient(), null, dockerUtils, null, 1000L);
+		JSONObject o = new JSONObject();
+		o.put(EVALUATION_ID,  fileEntityId);
+		System.setProperty("EVALUATION_TEMPLATES", o.toString());
+		Map<String,WorkflowURLEntrypointAndSynapseRef> map = wh.getWorkflowURLAndEntrypoint();
+		assertTrue(map.containsKey(EVALUATION_ID));
+		WorkflowURLEntrypointAndSynapseRef result = map.get(EVALUATION_ID);
+		assertEquals(fileEntityId, result.getSynapseId());
+		assertEquals(ZIP_FILE_URL, result.getWorkflowUrl().toString());
+		assertEquals(ROOT_TEMPLATE, result.getEntryPoint());
+		
+		Project project = new Project();
+		project.setId(projectId);
+		synapse.deleteEntity(project, true);
+
 	}
 
 }

@@ -69,11 +69,11 @@ import org.sagebionetworks.evaluation.model.SubmissionBundle;
 import org.sagebionetworks.evaluation.model.SubmissionStatus;
 import org.sagebionetworks.evaluation.model.SubmissionStatusEnum;
 import org.sagebionetworks.repo.model.Annotations;
-import org.sagebionetworks.repo.model.FileEntity;
 import org.sagebionetworks.repo.model.Folder;
 import org.sagebionetworks.repo.model.auth.LoginRequest;
 import org.sagebionetworks.repo.model.file.ExternalFileHandle;
 import org.sagebionetworks.repo.model.file.FileHandle;
+import org.sagebionetworks.repo.model.file.FileHandleResults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,19 +154,21 @@ public class WorkflowHook  {
 		Map<String,WorkflowURLEntrypointAndSynapseRef> result = new HashMap<String,WorkflowURLEntrypointAndSynapseRef>();
 		for (String evaluationId : evaluationToSynIDMap.keySet()) {
 			String entityId = evaluationToSynIDMap.get(evaluationId);
-			FileEntity fileEntity = synapse.getEntity(entityId, FileEntity.class);
-			FileHandle fh = synapse.getRawFileHandle(fileEntity.getDataFileHandleId());
-			if (fh instanceof ExternalFileHandle) {
-				ExternalFileHandle efh = (ExternalFileHandle)fh;
-				String urlString = efh.getExternalURL();
-				URL url = new URL(urlString);
-				// get annotation for the CWL entry point.  Does the file exist?
-	   			Annotations annotations = synapse.getAnnotations(entityId);
-	   			String rootTemplateString = annotations.getStringAnnotations().get(ROOT_TEMPLATE_ANNOTATION_NAME).get(0);
-	   			result.put(evaluationId, new WorkflowURLEntrypointAndSynapseRef(url, rootTemplateString, entityId));
-			} else {
-				throw new IllegalArgumentException("Only ExternalFileHandle is supported.");
+			FileHandleResults fhr = synapse.getEntityFileHandlesForCurrentVersion(entityId);
+			ExternalFileHandle efh = null;
+			for (FileHandle fh : fhr.getList()) {
+				if (fh instanceof ExternalFileHandle) {
+					if (efh!=null) throw new IllegalStateException("Expected one but found two external file handles in entity "+entityId+":  \n"+fhr);
+					efh = (ExternalFileHandle)fh;
+				}
 			}
+			if (efh==null) throw new IllegalStateException("Expected external file handle in entity "+entityId+":  \n"+fhr);
+			String urlString = efh.getExternalURL();
+			URL url = new URL(urlString);
+			// get annotation for the CWL entry point.  Does the file exist?
+			Annotations annotations = synapse.getAnnotations(entityId);
+			String rootTemplateString = annotations.getStringAnnotations().get(ROOT_TEMPLATE_ANNOTATION_NAME).get(0);
+			result.put(evaluationId, new WorkflowURLEntrypointAndSynapseRef(url, rootTemplateString, entityId));
 		}
 		return result;
 	}

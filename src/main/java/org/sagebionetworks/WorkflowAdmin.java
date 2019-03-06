@@ -78,6 +78,8 @@ public class WorkflowAdmin {
 		}
 
 	}
+	
+	public SynapseClient getSynapseClient() {return synapseAdmin;}
 
 	public WorkflowAdmin() throws SynapseException {
 		synapseAdmin = SynapseClientFactory.createSynapseClient();
