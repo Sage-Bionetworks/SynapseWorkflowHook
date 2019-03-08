@@ -21,14 +21,19 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
 import org.sagebionetworks.repo.model.EntityBundle;
 import org.sagebionetworks.repo.model.docker.DockerRepository;
 import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
 import org.sagebionetworks.schema.adapter.org.json.EntityFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.dockerjava.api.model.Container;
 
 public class Utils {
+	private static Logger log = LoggerFactory.getLogger(Utils.class);
+
 	public static final String SYNAPSE_DOCKER_HOST = "docker.synapse.org";
 
 	public static final long ONE_DAY_AS_MILLISEC = 24*3600*1000L;
@@ -226,7 +231,9 @@ public class Utils {
 		} else {
 			notificationEnabled = Integer.parseInt(notificationEnabledString);
 		}
-		return (notificationEnabled & mask) !=0;
+		int result = notificationEnabled & mask;
+		log.debug("mask: "+mask+" notificationEnabled: "+notificationEnabled+" result: "+result);
+		return result !=0;
 	}
 
 }
