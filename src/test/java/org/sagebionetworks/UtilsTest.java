@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.sagebionetworks.Constants.SUBMISSION_FAILED;
-import static org.sagebionetworks.Constants.SUBMISSION_NOTIFICATION_MASK_PARAM_NAME;
+import static org.sagebionetworks.Constants.SUBMITTER_NOTIFICATION_MASK_PARAM_NAME;
 import static org.sagebionetworks.Constants.SUBMISSION_STARTED;
 
 import org.junit.After;
@@ -24,7 +24,7 @@ public class UtilsTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		System.clearProperty(SUBMISSION_NOTIFICATION_MASK_PARAM_NAME);
+		System.clearProperty(SUBMITTER_NOTIFICATION_MASK_PARAM_NAME);
 	}
 	
 	@Test
@@ -46,7 +46,7 @@ public class UtilsTest {
 	
 	@Test
 	public void testNotificationEnabled() {
-		System.setProperty(SUBMISSION_NOTIFICATION_MASK_PARAM_NAME, "28");
+		System.setProperty(SUBMITTER_NOTIFICATION_MASK_PARAM_NAME, "28");
 		assertFalse(Utils.notificationEnabled(SUBMISSION_STARTED));
 		assertFalse(Utils.notificationEnabled(SUBMISSION_STARTED));
 		assertTrue(Utils.notificationEnabled(SUBMISSION_FAILED));

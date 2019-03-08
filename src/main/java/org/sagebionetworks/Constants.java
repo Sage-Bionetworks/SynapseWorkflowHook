@@ -101,9 +101,9 @@ public class Constants {
 	public static final int SUBMISSION_STOPPED_BY_USER = 8;
 	public static final int SUBMISSION_TIMED_OUT = 16;
 	
-	public static final String SUBMISSION_NOTIFICATION_MASK_PARAM_NAME = "SUBMISSION_NOTIFICATION_MASK";
+	public static final String SUBMITTER_NOTIFICATION_MASK_PARAM_NAME = "SUBMITTER_NOTIFICATION_MASK";
 	
-	public static final int SUBMISSION_NOTIFICATION_MASK_DEFAULT = 31;
+	public static final int SUBMITTER_NOTIFICATION_MASK_DEFAULT = 31;
 
 
 }
