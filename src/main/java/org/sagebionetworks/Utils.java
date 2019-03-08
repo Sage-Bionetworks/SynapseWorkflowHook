@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
 import org.sagebionetworks.repo.model.EntityBundle;
 import org.sagebionetworks.repo.model.docker.DockerRepository;
 import org.sagebionetworks.schema.adapter.JSONObjectAdapterException;
@@ -39,7 +38,6 @@ public class Utils {
 	public static final long ONE_DAY_AS_MILLISEC = 24*3600*1000L;
 
 	public static final String SEP = "."; // a string that's not contained in any token
-	private static final String SEP_REGEXP = "\\.";
 	private static final String WORKFLOW_CONTAINER_PREFIX = "workflow_job";
 	private static final String ARCHIVE_PREFIX = "archive";
 
@@ -232,7 +230,7 @@ public class Utils {
 			notificationEnabled = Integer.parseInt(notificationEnabledString);
 		}
 		int result = notificationEnabled & mask;
-		log.debug("mask: "+mask+" notificationEnabled: "+notificationEnabled+" result: "+result);
+		log.info("mask: "+mask+" notificationEnabled: "+notificationEnabled+" result: "+result);
 		return result !=0;
 	}
 
