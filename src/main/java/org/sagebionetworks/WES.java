@@ -7,7 +7,6 @@ import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
 import static org.sagebionetworks.Constants.TOIL_CLI_OPTIONS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.UNIX_SOCKET_PREFIX;
-import static org.sagebionetworks.Constants.UNIX_SOCKET_SUFFIX;
 import static org.sagebionetworks.Constants.WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME;
 import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
@@ -240,8 +239,8 @@ public class WES {
 			roVolumes.put(new File(hostCertsFolder), "/root/.docker/");
 		}
 		
-		if (dockerHost.startsWith(UNIX_SOCKET_PREFIX) && dockerHost.endsWith(UNIX_SOCKET_SUFFIX)) {
-			String volumeToMount = dockerHost.substring(UNIX_SOCKET_PREFIX.length(), dockerHost.length()-UNIX_SOCKET_SUFFIX.length());
+		if (dockerHost.startsWith(UNIX_SOCKET_PREFIX)) {
+			String volumeToMount = dockerHost.substring(UNIX_SOCKET_PREFIX.length());
 			log.info("Mounting: "+volumeToMount);
 			rwVolumes.put(new File(volumeToMount), volumeToMount);
 		}

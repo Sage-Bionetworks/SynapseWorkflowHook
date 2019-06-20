@@ -5,7 +5,7 @@ services:
       sagebionetworks/synapseworkflowhook
     volumes:
     - ${WORKFLOW_TEMPDIR}:/tempDir:rw
-    - /var/run:/var/run
+    - /var/run/docker.sock:/var/run/docker.sock
     environment:
     - DOCKER_ENGINE_URL=${DOCKER_ENGINE_URL}
     - SYNAPSE_USERNAME=${SYNAPSE_USERNAME}
