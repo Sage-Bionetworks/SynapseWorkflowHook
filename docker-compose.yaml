@@ -1,16 +1,20 @@
 version: '3'
+
+volumes:
+  shared:
+    driver: local
+
 services:
   workflow-hook:
     image:
       sagebionetworks/synapseworkflowhook
     volumes:
-    - ${WORKFLOW_TEMPDIR}:/tempDir:rw
+    - shared:/shared:rw
     - /var/run/docker.sock:/var/run/docker.sock
     environment:
     - DOCKER_ENGINE_URL=${DOCKER_ENGINE_URL}
     - SYNAPSE_USERNAME=${SYNAPSE_USERNAME}
     - SYNAPSE_PASSWORD=${SYNAPSE_PASSWORD}
-    - HOST_TEMP=${WORKFLOW_TEMPDIR}
     - WORKFLOW_OUTPUT_ROOT_ENTITY_ID=${WORKFLOW_OUTPUT_ROOT_ENTITY_ID}
     - EVALUATION_TEMPLATES=${EVALUATION_TEMPLATES}
     - NOTIFICATION_PRINCIPAL_ID=${NOTIFICATION_PRINCIPAL_ID}

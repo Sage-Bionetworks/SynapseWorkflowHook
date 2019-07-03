@@ -1,10 +1,11 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.AGENT_SHARED_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DOCKER_CERT_PATH_HOST_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DUMP_PROGRESS_SHELL_COMMAND;
-import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
+import static org.sagebionetworks.Constants.SHARED_VOLUME_NAME;
 import static org.sagebionetworks.Constants.TOIL_CLI_OPTIONS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.UNIX_SOCKET_PREFIX;
 import static org.sagebionetworks.Constants.WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME;
@@ -12,7 +13,6 @@ import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
 import static org.sagebionetworks.Utils.createTempFile;
 import static org.sagebionetworks.Utils.findRunningWorkflowJobs;
-import static org.sagebionetworks.Utils.getHostMountedScratchDir;
 import static org.sagebionetworks.Utils.getProperty;
 import static org.sagebionetworks.Utils.getTempDir;
 
@@ -67,8 +67,11 @@ public class WES {
 		this.dockerUtils=dockerUtils;
 	}
 	
-	private static ContainerRelativeFile createDirInHostMountedScratchDir() {
-		ContainerRelativeFile result = new ContainerRelativeFile(UUID.randomUUID().toString(), getHostMountedScratchDir(), new File(getProperty(HOST_TEMP_DIR_PROPERTY_NAME)));
+	private ContainerRelativeFile createDirInHostMountedSharedDir() {
+		String name = UUID.randomUUID().toString();
+		String mountPoint = dockerUtils.getVolumeMountPoint(SHARED_VOLUME_NAME);
+		ContainerRelativeFile result = new ContainerRelativeFile(name, 
+				new File(System.getProperty(AGENT_SHARED_DIR_PROPERTY_NAME)), new File(mountPoint));
 		File dir = result.getContainerPath();
 		if (!dir.mkdir()) throw new RuntimeException("Unable to create "+dir.getAbsolutePath());
 		return result;
@@ -105,13 +108,12 @@ public class WES {
 	private static final String SECONDARY_DESCRIPTOR_TYPE = "SECONDARY_DESCRIPTOR";
 	
 	
-	public static ContainerRelativeFile downloadWorkflowFromURL(URL workflowUrl, String entrypoint) throws IOException {
-		ContainerRelativeFile workflowTemplateFolder = createDirInHostMountedScratchDir();
+	public static void downloadWorkflowFromURL(URL workflowUrl, String entrypoint, File targetDir) throws IOException {
 		String path = workflowUrl.getPath();
 		if (path.toLowerCase().endsWith(ZIP_SUFFIX)) {
-			downloadZip(workflowUrl, getTempDir(), workflowTemplateFolder.getContainerPath());
+			downloadZip(workflowUrl, getTempDir(), targetDir);
    			// root file should be relative to unzip location
-   			if (!(new File(workflowTemplateFolder.getContainerPath(),entrypoint)).exists()) {
+   			if (!(new File(targetDir,entrypoint)).exists()) {
    				throw new IllegalStateException(entrypoint+" is not in the unzipped archive downloaded from "+workflowUrl);
    			}
 		} else if (path.contains(GA4GH_TRS_FILE_FRAGMENT)) {
@@ -132,15 +134,14 @@ public class WES {
 				URL descriptorUrl = new URL(workflowUrl.toString()+"/descriptor/"+filePath);
 				String descriptorContent = downloadWebDocument(descriptorUrl);
 				JSONObject descriptor = new JSONObject(descriptorContent);
-				try (OutputStream os = new FileOutputStream(new File(workflowTemplateFolder.getContainerPath(), filePath))) {
+				try (OutputStream os = new FileOutputStream(new File(targetDir, filePath))) {
 					IOUtils.write(descriptor.getString("content"), os, Charset.forName("utf-8"));
 				}
 			}
 			
 		} else {
-			throw new RuntimeException("Expected template to be a zip archive or TRS files URL, bound found "+path);
+			throw new RuntimeException("Expected template to be a zip archive or TRS files URL, but found "+path);
 		}
-		return workflowTemplateFolder;
 	}
 	
 	private ContainerRelativeFile createWorkflowParametersYamlFile(WorkflowParameters params, ContainerRelativeFile targetFolder,
@@ -171,7 +172,9 @@ public class WES {
 	 */
 	public WorkflowJob createWorkflowJob(URL workflowUrl, String entrypoint, 
 			WorkflowParameters workflowParameters, byte[] synapseConfigFileContent) throws IOException {
-		ContainerRelativeFile workflowFolder = downloadWorkflowFromURL(workflowUrl, entrypoint);// relative to 'temp' folder which is mounted to the container
+		ContainerRelativeFile workflowFolder = createDirInHostMountedSharedDir();
+
+		downloadWorkflowFromURL(workflowUrl, entrypoint, workflowFolder.getContainerPath());
 		
 		// The folder with the workflow and param's, from the POV of the host
 		File hostWorkflowFolder = workflowFolder.getHostPath();

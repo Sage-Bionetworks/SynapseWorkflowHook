@@ -150,6 +150,10 @@ public class DockerUtils {
 	public Info getInfo() {
 		return dockerClient.infoCmd().exec();
 	}
+	
+	public String getVolumeMountPoint(String volumeName) {
+		return dockerClient.inspectVolumeCmd(volumeName).exec().getMountpoint();
+	}
 
 	public static void addVolumes(Map<File, String> volumes, String volumesList) {
 		if (volumesList != null) {
@@ -302,8 +306,7 @@ public class DockerUtils {
 		}
 		command = command.withBinds(binds);
 		command = command.withDevices(devices);
-//		command = command.withCpusetCpus(getProperty("CPUS")).withMemory(
-//				Long.parseLong(getProperty("MEMORY_GB")) * GIGABYTE_IN_BYTES);
+
 		if (env != null)
 			command = command.withEnv(env);
 
@@ -413,10 +416,6 @@ public class DockerUtils {
 		} catch (NotFoundException e) {
 			log.warn("Tried to remove image "+imageId+" but trigger a NotFoundException.", e);
 		}
-	}
-
-	public void createVolume(String name, String driver) {
-		dockerClient.createVolumeCmd().withName(name).withDriver(driver).exec();
 	}
 
 	/*

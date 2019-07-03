@@ -5,9 +5,10 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.AGENT_SHARED_DIR_DEFAULT;
+import static org.sagebionetworks.Constants.AGENT_SHARED_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
-import static org.sagebionetworks.Constants.HOST_TEMP_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.SHARED_VOLUME_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
 
@@ -76,12 +77,13 @@ public class WorkflowHookTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		System.setProperty(AGENT_TEMP_DIR_PROPERTY_NAME, System.getProperty("java.io.tmpdir"));
-		System.setProperty(HOST_TEMP_DIR_PROPERTY_NAME, System.getProperty("java.io.tmpdir"));
 		System.setProperty("WORKFLOW_OUTPUT_ROOT_ENTITY_ID", WORKFLOW_OUTPUT_ROOT_ENTITY_ID);
 		System.setProperty("SYNAPSE_USERNAME", "foo");
 		System.setProperty("SYNAPSE_PASSWORD", "bar");
 		System.setProperty(DOCKER_ENGINE_URL_PROPERTY_NAME, "unix:///var/run/docker.sock");
+		
+		when(dockerUtils.getVolumeMountPoint(SHARED_VOLUME_NAME)).thenReturn(System.getProperty("java.io.tmpdir"));
+		System.setProperty(AGENT_SHARED_DIR_PROPERTY_NAME, System.getProperty("java.io.tmpdir"));
 		
 		long sleepTimeMillis = 1*60*1000L;
 		workflowHook = new WorkflowHook(
@@ -92,13 +94,12 @@ public class WorkflowHookTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		System.clearProperty(AGENT_TEMP_DIR_PROPERTY_NAME);
-		System.clearProperty(HOST_TEMP_DIR_PROPERTY_NAME);
 		System.clearProperty("WORKFLOW_OUTPUT_ROOT_ENTITY_ID");
 		System.clearProperty("SYNAPSE_USERNAME");
 		System.clearProperty("SYNAPSE_PASSWORD");
 		System.clearProperty(DOCKER_ENGINE_URL_PROPERTY_NAME);
 		System.clearProperty("EVALUATION_TEMPLATES");
+		System.setProperty(AGENT_SHARED_DIR_PROPERTY_NAME, AGENT_SHARED_DIR_DEFAULT);
 	}
 
 	@Test

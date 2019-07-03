@@ -25,30 +25,21 @@ public class Constants {
 	// property names appear as "-e" options in the "docker run" command that launches this agent
 	// these folders are the paths on the host
 	
-	// This is the name of a directory mounted from the host so that files created by the agent can
-	// be shared externally (in particular with the workflow)
-	public static final String HOST_TEMP_DIR_PROPERTY_NAME = "HOST_TEMP";
-	
 	public static final String TOIL_CLI_OPTIONS_PROPERTY_NAME = "TOIL_CLI_OPTIONS";
 	
 	public static final String WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME = "WORKFLOW_ENGINE_DOCKER_IMAGE";
 
-	// these are the paths as they appear in the agent container, 
-	// i.e. the agent container is run with "-v /host/path:/agent/path
-	// the agent may not need to access all the folders but mounting them allows it to verify that
-	// they are present on the host
-	public static final String AGENT_TEMP_DIR_PROPERTY_NAME = "AGENT_TEMP_DIR";
-	public static final String AGENT_TEMP_DIR_DEFAULT = "/tempDir";
-
-	// folder names as they appear to the workflow
-	// these are used in the "docker run" command that this agent uses to
-	// launch the container which runs the workflow
-	public static final String WORKFLOW_TEMP_DIR = "/tempDir";
+	// The Docker name of the mounted volume for sharing data files between containers
+	public static final String SHARED_VOLUME_NAME = "shared";
 	
-	public static final String WORKFLOW_SYNAPSE_CONFIG_FOLDER = "/root";
-
-	public static final String WORKFLOW_SYNAPSE_CONFIG_FILE_NAME = ".synapseConfig";
-
+	// the mount point of the shared volume withing the container
+	public static final String AGENT_SHARED_DIR_PROPERTY_NAME = "AGENT_SHARED_DIR_PROPERTY";
+	public static final String AGENT_SHARED_DIR_DEFAULT = "/shared";
+	
+	static {
+		System.setProperty(AGENT_SHARED_DIR_PROPERTY_NAME, AGENT_SHARED_DIR_DEFAULT);
+	}
+	
 	public static final String ROOT_TEMPLATE_ANNOTATION_NAME="ROOT_TEMPLATE";
 	
 	public static final String MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME = "MAX_CONCURRENT_WORKFLOWS";

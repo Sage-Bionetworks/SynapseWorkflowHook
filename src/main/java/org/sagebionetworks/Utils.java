@@ -1,7 +1,5 @@
 package org.sagebionetworks;
 
-import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_DEFAULT;
-import static org.sagebionetworks.Constants.AGENT_TEMP_DIR_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.SUBMITTER_NOTIFICATION_MASK_DEFAULT;
 import static org.sagebionetworks.Constants.SUBMITTER_NOTIFICATION_MASK_PARAM_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
@@ -88,11 +86,6 @@ public class Utils {
 		return new File(System.getProperty("java.io.tmpdir"));
 	}
 	
-	public static File getHostMountedScratchDir() {
-		String agentTempDir = getProperty(AGENT_TEMP_DIR_PROPERTY_NAME, false);
-		if (agentTempDir==null) agentTempDir = AGENT_TEMP_DIR_DEFAULT;
-		return new File(agentTempDir);
-	}
 	private static boolean missing(String s) {
 		return StringUtils.isEmpty(s) || "null".equals(s);
 	}

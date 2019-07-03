@@ -94,7 +94,6 @@ When using `DOCKER_CERT_PATH_HOST` you must also add the following under `volume
 ```
     - ${DOCKER_CERT_PATH_HOST}:/certs:ro
 ```
-- `WORKFLOW_TEMPDIR` - absolute path to a scratch folder on the host machine, mounted as /tempDir to the container running the WorkflowHook
 - `SYNAPSE_USERNAME` - Synapse credentials under which the Workflow Hook will run.  Must have access to evaluation queue(s) being serviced
 - `SYNAPSE_PASSWORD` - password for `SYNAPSE_USERNAME`
 - `WORKFLOW_OUTPUT_ROOT_ENTITY_ID` - root (Project or Folder) for uploaded doc's, like log files.  Hierarchy is root/submitterId/submissionId/files. May be the ID of the project generated in the set-up step, above.
