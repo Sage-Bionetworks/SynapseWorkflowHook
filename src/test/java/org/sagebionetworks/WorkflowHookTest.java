@@ -127,7 +127,7 @@ public class WorkflowHookTest {
 	
 	@Test 
 	public void testUpdateWorkflowJobs() throws Throwable {
-		workflowHook.updateWorkflowJobs(EVALUATION_ID);
+		workflowHook.updateWorkflowJobs(Collections.singletonList(EVALUATION_ID));
 	}
 	
 	private static String ZIP_FILE_URL = "https://github.com/Sage-Bionetworks/SynapseWorkflowExample/archive/master.zip";

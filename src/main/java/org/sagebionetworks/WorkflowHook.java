@@ -192,8 +192,8 @@ public class WorkflowHook  {
 			for (String evaluationId : getEvaluationIds()) {
 				WorkflowURLEntrypointAndSynapseRef workflow = evaluationIdToTemplateMap.get(evaluationId);
 				createNewWorkflowJobs(evaluationId, workflow);
-				updateWorkflowJobs(evaluationId);
 			}
+			updateWorkflowJobs(getEvaluationIds());
 
 			try {
 				Thread.sleep(sleepTimeMillis);
@@ -304,19 +304,20 @@ public class WorkflowHook  {
 		return result;
 	}
 
-	public void updateWorkflowJobs(String evaluationId) throws Throwable {
-		List<WorkflowJob> jobs=null;
+	public void updateWorkflowJobs(List<String> evaluationIds) throws Throwable {
 		// list the running jobs according to Synapse
-		List<SubmissionBundle> runningSubmissions=null;
-		try {
-			runningSubmissions = evaluationUtils.
-					selectSubmissions(evaluationId, getInProgressSubmissionState());
-		} catch (IllegalStateException e ) {
-			log.warn("Got IllegalStateException when calling selectSubmissions().  Will retry.  Message is: "+e.getMessage());
+		List<SubmissionBundle> runningSubmissions=new ArrayList<SubmissionBundle>();
+		for (String evaluationId : evaluationIds) {
+			try {
+				runningSubmissions = evaluationUtils.
+						selectSubmissions(evaluationId, getInProgressSubmissionState());
+			} catch (IllegalStateException e ) {
+				log.warn("Got IllegalStateException when calling selectSubmissions().  Will retry.  Message is: "+e.getMessage());
+			}
 		}
 		
 		// list the running jobs according to the workflow system
-		jobs = wes.listWorkflowJobs();
+		List<WorkflowJob> jobs = wes.listWorkflowJobs();
 		// the two lists should be the same ...
 		Map<String, WorkflowJob> workflowIdToJobMap = workflowIdsForJobs(jobs);
 		Map<String, SubmissionBundle> workflowIdToSubmissionMap = workflowIdsForSubmissions(runningSubmissions);
