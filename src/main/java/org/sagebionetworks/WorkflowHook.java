@@ -309,8 +309,8 @@ public class WorkflowHook  {
 		List<SubmissionBundle> runningSubmissions=new ArrayList<SubmissionBundle>();
 		for (String evaluationId : evaluationIds) {
 			try {
-				runningSubmissions = evaluationUtils.
-						selectSubmissions(evaluationId, getInProgressSubmissionState());
+				runningSubmissions.addAll(evaluationUtils.
+						selectSubmissions(evaluationId, getInProgressSubmissionState()));
 			} catch (IllegalStateException e ) {
 				log.warn("Got IllegalStateException when calling selectSubmissions().  Will retry.  Message is: "+e.getMessage());
 			}
