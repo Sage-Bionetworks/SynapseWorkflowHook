@@ -167,7 +167,14 @@ public class WorkflowHook  {
 			URL url = new URL(urlString);
 			// get annotation for the CWL entry point.  Does the file exist?
 			Annotations annotations = synapse.getAnnotations(entityId);
-			String rootTemplateString = annotations.getStringAnnotations().get(ROOT_TEMPLATE_ANNOTATION_NAME).get(0);
+			Map<String, List<String>> annotationsMap = annotations.getStringAnnotations();
+			if (annotationsMap==null) throw 
+				new IllegalStateException("Expected string annotation called "+
+					ROOT_TEMPLATE_ANNOTATION_NAME+" for "+entityId+" but the entity has no string annotations.");
+			List<String> stringAnnotations = annotationsMap.get(ROOT_TEMPLATE_ANNOTATION_NAME);
+			if (stringAnnotations==null || stringAnnotations.isEmpty()) throw 
+				new IllegalStateException(entityId+" has no string annotation called "+ROOT_TEMPLATE_ANNOTATION_NAME);
+			String rootTemplateString = stringAnnotations.get(0);
 			result.put(evaluationId, new WorkflowURLEntrypointAndSynapseRef(url, rootTemplateString, entityId));
 		}
 		return result;
