@@ -30,7 +30,11 @@ public class Constants {
 	public static final String WORKFLOW_ENGINE_DOCKER_IMAGES_PROPERTY_NAME = "WORKFLOW_ENGINE_DOCKER_IMAGE";
 
 	// The Docker name of the mounted volume for sharing data files between containers
-	public static final String SHARED_VOLUME_NAME = "synapseworkflowhook_shared";
+	public static final String SHARED_VOLUME_NAME = "shared";
+	
+	
+	// this is the environment variable docker compose uses for the project name
+	public static final String COMPOSE_PROJECT_NAME_ENV_VAR = "COMPOSE_PROJECT_NAME";
 	
 	// the mount point of the shared volume withing the container
 	public static final String AGENT_SHARED_DIR_PROPERTY_NAME = "AGENT_SHARED_DIR_PROPERTY";

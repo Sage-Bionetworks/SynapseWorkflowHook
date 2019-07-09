@@ -7,10 +7,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.Constants.AGENT_SHARED_DIR_DEFAULT;
 import static org.sagebionetworks.Constants.AGENT_SHARED_DIR_PROPERTY_NAME;
+import static org.sagebionetworks.Constants.COMPOSE_PROJECT_NAME_ENV_VAR;
 import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.SHARED_VOLUME_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
 import static org.sagebionetworks.Constants.SYNAPSE_USERNAME_PROPERTY;
+import static org.sagebionetworks.Utils.dockerComposeName;
 
 import java.io.IOException;
 import java.net.URL;
@@ -33,7 +35,6 @@ import org.sagebionetworks.evaluation.model.SubmissionStatusEnum;
 import org.sagebionetworks.repo.model.Folder;
 import org.sagebionetworks.repo.model.Project;
 import org.sagebionetworks.repo.model.UserProfile;
-
 
 @RunWith(MockitoJUnitRunner.class)
 public class WorkflowHookTest {
@@ -81,8 +82,9 @@ public class WorkflowHookTest {
 		System.setProperty("SYNAPSE_USERNAME", "foo");
 		System.setProperty("SYNAPSE_PASSWORD", "bar");
 		System.setProperty(DOCKER_ENGINE_URL_PROPERTY_NAME, "unix:///var/run/docker.sock");
+		System.setProperty(COMPOSE_PROJECT_NAME_ENV_VAR, "project");
 		
-		when(dockerUtils.getVolumeMountPoint(SHARED_VOLUME_NAME)).thenReturn(System.getProperty("java.io.tmpdir"));
+		when(dockerUtils.getVolumeMountPoint(dockerComposeName(SHARED_VOLUME_NAME))).thenReturn(System.getProperty("java.io.tmpdir"));
 		System.setProperty(AGENT_SHARED_DIR_PROPERTY_NAME, System.getProperty("java.io.tmpdir"));
 		
 		long sleepTimeMillis = 1*60*1000L;

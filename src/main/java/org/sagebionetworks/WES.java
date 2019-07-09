@@ -12,6 +12,7 @@ import static org.sagebionetworks.Constants.WORKFLOW_ENGINE_DOCKER_IMAGES_PROPER
 import static org.sagebionetworks.Utils.WORKFLOW_FILTER;
 import static org.sagebionetworks.Utils.archiveContainerName;
 import static org.sagebionetworks.Utils.createTempFile;
+import static org.sagebionetworks.Utils.dockerComposeName;
 import static org.sagebionetworks.Utils.findRunningWorkflowJobs;
 import static org.sagebionetworks.Utils.getProperty;
 import static org.sagebionetworks.Utils.getTempDir;
@@ -69,7 +70,7 @@ public class WES {
 	
 	private ContainerRelativeFile createDirInHostMountedSharedDir() {
 		String name = UUID.randomUUID().toString();
-		String mountPoint = dockerUtils.getVolumeMountPoint(SHARED_VOLUME_NAME);
+		String mountPoint = dockerUtils.getVolumeMountPoint(dockerComposeName(SHARED_VOLUME_NAME));
 		ContainerRelativeFile result = new ContainerRelativeFile(name, 
 				new File(System.getProperty(AGENT_SHARED_DIR_PROPERTY_NAME)), new File(mountPoint));
 		File dir = result.getContainerPath();

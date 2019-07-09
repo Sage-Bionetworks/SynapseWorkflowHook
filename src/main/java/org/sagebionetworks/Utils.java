@@ -1,5 +1,6 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.COMPOSE_PROJECT_NAME_ENV_VAR;
 import static org.sagebionetworks.Constants.SUBMITTER_NOTIFICATION_MASK_DEFAULT;
 import static org.sagebionetworks.Constants.SUBMITTER_NOTIFICATION_MASK_PARAM_NAME;
 import static org.sagebionetworks.Constants.SYNAPSE_PASSWORD_PROPERTY;
@@ -66,6 +67,14 @@ public class Utils {
 		if (!Pattern.matches(SubmissionUtils.SYNID_REGEX, id.toLowerCase().trim()))
 			throw new RuntimeException(id+" is not a Synapse ID.");
 		
+	}
+	
+	/*
+	 * Docker Compose creates container and volume names by prepending the project name 
+	 * followed by an underscore.  This recreates the construct
+	 */
+	public static String dockerComposeName(String name) {
+		return getProperty(COMPOSE_PROJECT_NAME_ENV_VAR)+"_"+name;
 	}
 
 	public static String getSynIdProperty(String key) {
