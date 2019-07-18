@@ -213,7 +213,7 @@ public class WES {
 		cmd.addAll(Arrays.asList("--workDir",  
 				workflowRunnerWorkflowFolder.getAbsolutePath(), 
 				"--noLinkImports",
-				entrypoint,
+				(new File(workflowRunnerWorkflowFolder.getAbsolutePath(), entrypoint)).getAbsolutePath(),
 				workflowParametersFile.getHostPath().getAbsolutePath()
 				));
 

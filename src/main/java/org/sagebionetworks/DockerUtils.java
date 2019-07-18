@@ -204,7 +204,7 @@ public class DockerUtils {
 			env.add("GPUS=" + StringUtils.join(nvidiaDevices, ";"));
 		}
 		return createContainer(imageReference, containerName,
-				binds.toArray(new Bind[] {}), devices.toArray(new Device[] {}),
+				binds, devices,
 				command, env, workingDir);
 	}
 
@@ -263,8 +263,8 @@ public class DockerUtils {
 	public String createContainer(
 			String imageReference, 
 			String containerName,
-			Bind[] binds, 
-			Device[] devices, 
+			List<Bind> binds, 
+			List<Device> devices, 
 			List<String> cmd, 
 			List<String> env,
 			String workingDir)

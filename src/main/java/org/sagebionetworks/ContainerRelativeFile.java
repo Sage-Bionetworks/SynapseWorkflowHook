@@ -7,7 +7,6 @@ import java.io.File;
  * Docker mounted directory. 
  */
 public class ContainerRelativeFile {
-	private String relativePath;
 	private File containerPath;
 	private File hostPath;
 	
@@ -18,7 +17,6 @@ public class ContainerRelativeFile {
 	 * @param hostRoot root path as seen from within the container
 	 */
 	public ContainerRelativeFile(String relativePath, File containerRoot, File hostRoot) {
-		this.relativePath=relativePath;
 		containerPath = new File(containerRoot, relativePath);
 		hostPath = new File(hostRoot, relativePath);
 	}

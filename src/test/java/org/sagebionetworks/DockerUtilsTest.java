@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
@@ -21,7 +23,8 @@ public class DockerUtilsTest {
 	@Test
 	public void testDockerLogs() throws Exception {
 		DockerUtils dockerUtils = new DockerUtils();
-		String containerId = dockerUtils.createContainer("hello-world", "containerName", new Bind[]{}, new Device[]{}, null, null, null);
+		String containerId = dockerUtils.createContainer("hello-world", "containerName", 
+				(List<Bind>)Collections.EMPTY_LIST, (List<Device>)Collections.EMPTY_LIST, null, null, null);
 		dockerUtils.startContainer(containerId);
 		Path logFile = Files.createTempFile(containerId, ".txt");
 		dockerUtils.getLogs(containerId, logFile, null);
