@@ -173,7 +173,8 @@ public class DockerUtils {
 			Map<File, String> rwVolumes, 
 			List<String> environmentVariables, 
 			List<String> command,
-			String workingDir) throws IOException {
+			String workingDir,
+			boolean privileged) throws IOException {
 		List<Bind> binds = new ArrayList<Bind>();
 		String rwVolumeList = getProperty("RW_VOLUMES", false);
 		if (!StringUtils.isEmpty(rwVolumeList)) {
@@ -205,7 +206,7 @@ public class DockerUtils {
 		}
 		return createContainer(imageReference, containerName,
 				binds, devices,
-				command, env, workingDir);
+				command, env, workingDir, privileged);
 	}
 
 	private static final String UNKNOWN_MANIFEST_ERROR = "{\"message\":\"manifest unknown: manifest unknown\"}";
@@ -267,7 +268,8 @@ public class DockerUtils {
 			List<Device> devices, 
 			List<String> cmd, 
 			List<String> env,
-			String workingDir)
+			String workingDir,
+			boolean privileged)
 					throws IOException {
 		if (!imageReference.toLowerCase().startsWith("sha256:")) {
 			try {
@@ -309,6 +311,9 @@ public class DockerUtils {
 
 		if (env != null)
 			command = command.withEnv(env);
+		
+		if (privileged)
+			command = command.withPrivileged(privileged);
 
 		CreateContainerResponse container = command.exec();
 

@@ -129,6 +129,7 @@ FROM sagebionetworks/synapseworkflowhook-toil
 ```
 and then to add additional dependencies.
 - `MAX_CONCURRENT_WORKFLOWS` - (optional) the maximum number of workflows that will be allowed to run at any time.  Default is 10.
+- `RUN_WORKFLOW_CONTAINER_IN_PRIVILEGED_MODE` - (optional) if `true` then when the containerized workflow is initiated, the container it's running in will be run in 'privileged mode'.  In some environments this is required for workflows which themselves run containers.
 
 Now run:
 

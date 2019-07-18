@@ -5,6 +5,7 @@ import static org.sagebionetworks.Constants.DOCKER_CERT_PATH_HOST_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DOCKER_ENGINE_URL_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DUMP_PROGRESS_SHELL_COMMAND;
 import static org.sagebionetworks.Constants.NUMBER_OF_PROGRESS_CHARACTERS;
+import static org.sagebionetworks.Constants.RUN_WORKFLOW_CONTAINER_IN_PRIVILEGED_MODE_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.SHARED_VOLUME_NAME;
 import static org.sagebionetworks.Constants.TOIL_CLI_OPTIONS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.UNIX_SOCKET_PREFIX;
@@ -260,6 +261,8 @@ public class WES {
 		// but sagebionetworks/synapseworkflowhook-toil incorporates the Synapse client as well at Toil and Docker
 		if (StringUtils.isEmpty(workflowEngineImage)) workflowEngineImage = "sagebionetworks/synapseworkflowhook-toil";
 		
+		boolean privileged = new Boolean(getProperty(RUN_WORKFLOW_CONTAINER_IN_PRIVILEGED_MODE_PROPERTY_NAME, false));
+		
 		try {
 			containerId = dockerUtils.createModelContainer(
 					workflowEngineImage,
@@ -268,8 +271,8 @@ public class WES {
 					rwVolumes, 
 					containerEnv,
 					cmd,
-					workingDir
-					);
+					workingDir,
+					privileged);
 
 			dockerUtils.startContainer(containerId);
 		} catch (DockerPullException e) {

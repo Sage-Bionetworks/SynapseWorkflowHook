@@ -48,6 +48,8 @@ public class Constants {
 	
 	public static final String MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME = "MAX_CONCURRENT_WORKFLOWS";
 	public static final int DEFAULT_MAX_CONCURRENT_WORKFLOWS = 10;
+	
+	public static final String RUN_WORKFLOW_CONTAINER_IN_PRIVILEGED_MODE_PROPERTY_NAME = "RUN_WORKFLOW_CONTAINER_IN_PRIVILEGED_MODE";
 
 	/*
 	 * If true then rather than removing containers when they finish running, just

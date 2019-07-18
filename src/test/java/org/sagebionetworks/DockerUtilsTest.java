@@ -24,7 +24,7 @@ public class DockerUtilsTest {
 	public void testDockerLogs() throws Exception {
 		DockerUtils dockerUtils = new DockerUtils();
 		String containerId = dockerUtils.createContainer("hello-world", "containerName", 
-				(List<Bind>)Collections.EMPTY_LIST, (List<Device>)Collections.EMPTY_LIST, null, null, null);
+				(List<Bind>)Collections.EMPTY_LIST, (List<Device>)Collections.EMPTY_LIST, null, null, null, false);
 		dockerUtils.startContainer(containerId);
 		Path logFile = Files.createTempFile(containerId, ".txt");
 		dockerUtils.getLogs(containerId, logFile, null);
