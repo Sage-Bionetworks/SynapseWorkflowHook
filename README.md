@@ -130,6 +130,7 @@ FROM sagebionetworks/synapseworkflowhook-toil
 and then to add additional dependencies.
 - `MAX_CONCURRENT_WORKFLOWS` - (optional) the maximum number of workflows that will be allowed to run at any time.  Default is 10.
 - `RUN_WORKFLOW_CONTAINER_IN_PRIVILEGED_MODE` - (optional) if `true` then when the containerized workflow is initiated, the container it's running in will be run in 'privileged mode'.  In some environments this is required for workflows which themselves run containers.
+- `ACCEPT_NEW_SUBMISSIONS` - (optional) if omitted then new submissions will be started.  If present, then should be boolean (`true` or `false`).  If `false` then no new submissions will be started, only existing ones will be finished up.  This is an important feature for smoothly decommissioning one machine to switch to another.
 
 Now run:
 
@@ -205,4 +206,25 @@ The workflow is passed the IDs of both the locked and unlocked submission folder
 #### Timing out
 
 The workflow hook checks each submission for an integer (long) annotation named `org.sagebionetworks.SynapseWorkflowHook.TimeRemaining`.  If the value is present and not greater than zero then the submission will be stopped and a "timed out" notification sent.  If the annotation is not present then no action will be taken.  Through this mechanism a custom application can determine which submissions have exceeded their alloted time and stop them.   Such an application is communicating with the workflow hook via the submissions' annotations.  This architecture allows each submission queue administrator to customize the time-out logic rather than having some particular algorithm hard-coded into the workflow hook.
+
+
+#### Decommissioning a Machine
+If there is a need to decommission a machine while workflows are pending, then do the following:
+
+Stop the service,
+
+```
+docker-compose down
+```
+Set the environment variable, `ACCEPT_NEW_SUBMISSIONS` to `false`.  Now restart, 
+
+```
+docker-compose up
+```
+The currently running submissions will finish up but no new jobs will be started.  When all running jobs have finished,
+
+```
+docker-compose down
+```
+The machine may now be decommissioned.
 

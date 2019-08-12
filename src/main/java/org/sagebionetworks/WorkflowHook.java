@@ -1,5 +1,6 @@
 package org.sagebionetworks;
 
+import static org.sagebionetworks.Constants.ACCEPT_NEW_SUBMISSIONS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.DEFAULT_MAX_CONCURRENT_WORKFLOWS;
 import static org.sagebionetworks.Constants.MAX_CONCURRENT_WORKFLOWS_PROPERTY_NAME;
 import static org.sagebionetworks.Constants.MAX_LOG_ANNOTATION_CHARS;
@@ -196,9 +197,13 @@ public class WorkflowHook  {
 		while (!shutdownHook.shouldShutDown()) { // this allows a system shut down to shut down the agent
 			log.info("Top level loop: checking progress or starting new job.");
 
-			for (String evaluationId : getEvaluationIds()) {
-				WorkflowURLEntrypointAndSynapseRef workflow = evaluationIdToTemplateMap.get(evaluationId);
-				createNewWorkflowJobs(evaluationId, workflow);
+			
+			String acceptNewSubmissionsString = getProperty(ACCEPT_NEW_SUBMISSIONS_PROPERTY_NAME, false);
+			if (StringUtils.isEmpty(acceptNewSubmissionsString) || Boolean.getBoolean(acceptNewSubmissionsString)) {
+				for (String evaluationId : getEvaluationIds()) {
+					WorkflowURLEntrypointAndSynapseRef workflow = evaluationIdToTemplateMap.get(evaluationId);
+					createNewWorkflowJobs(evaluationId, workflow);
+				}
 			}
 			updateWorkflowJobs(getEvaluationIds());
 

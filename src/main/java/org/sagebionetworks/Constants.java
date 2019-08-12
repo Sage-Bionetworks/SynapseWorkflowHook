@@ -100,5 +100,7 @@ public class Constants {
 	
 	public static final int SUBMITTER_NOTIFICATION_MASK_DEFAULT = 31;
 
+	public static final String ACCEPT_NEW_SUBMISSIONS_PROPERTY_NAME = "ACCEPT_NEW_SUBMISSIONS";
+	
 
 }
