@@ -129,6 +129,7 @@ public class WorkflowHook  {
 		this.messageUtils=new MessageUtils(synapse);
 		this.wes = new WES(dockerUtils);
 		this.archiver = new Archiver(synapse, wes);
+		login();
 
 		// precheck
 		dockerUtils.getInfo();
