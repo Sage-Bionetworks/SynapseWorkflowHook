@@ -1,3 +1,5 @@
+> There is a new tool to link Synapse Evaluation queues to a workflow engine at [Sage-Bionetworks/SynapseWorkflowOrchestrator](https://github.com/Sage-Bionetworks/SynapseWorkflowOrchestrator). This has the option of linking the queue through a Workflow Execution Service implementation. If you aren't currently using the `SynapseWorkflowHook` please consider using the new implementation. Thanks!
+
 **Synapse Workflow Hook Build**
 
 ![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/synapseworkflowhook.svg) ![Docker Build](https://img.shields.io/docker/build/sagebionetworks/synapseworkflowhook.svg)
